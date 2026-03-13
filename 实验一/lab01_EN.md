@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
 }
 ```
 
-## 8.1.4 Tool Use
+### 8.1.4 Tool Use
 
 - Define a tool
 ```bash
@@ -228,7 +228,7 @@ generateText({
 })
 ```
 
-## 8.1.5 Structured Output
+### 8.1.5 Structured Output
 You need to install Zod first. Zod provides runtime type validation. AI SDK uses it to ensure that the parameter types returned by the AI are correct, and also sends the schema to the model to describe the parameter structure.
 
 ```bash
@@ -359,9 +359,9 @@ for await (const partial of partialObjectStream) {
 }
 ```
 
-# 8.2 AI SDK Agents
+## 8.2 AI SDK Agents
 
-## 8.2.1 Basic Usage
+### 8.2.1 Basic Usage
 
 - Define an Agent
 ```bash
@@ -434,7 +434,7 @@ for (const step of result.steps) {
 }
 ```
 
-## 8.2.2 Loop Control
+### 8.2.2 Loop Control
 - `stopWhen` - built-in stop conditions
 ```bash
 import {
@@ -531,7 +531,7 @@ const result = await agent.generate({
 })
 ```
 
-## 8.2.3 Memory
+### 8.2.3 Memory
 - Persist conversation history (short-term memory across sessions)
 
 Load history from the DB before each conversation, and store it back after the conversation ends.
@@ -655,7 +655,7 @@ ${memories.map(m => `- ${m.text}`).join('\n')}`,
 })
 ```
 
-## 8.2.4 Subagents
+### 8.2.4 Subagents
 - Call Subagents
 ```bash
 // 1. Define expert Agents
@@ -771,7 +771,7 @@ async function route(userQuestion: string) {
 }
 ```
 
-## Multi-Agent
+### Multi-Agent
 AI SDK itself does not include a built-in "Multi-Agent framework", but it provides all the primitives needed to build multi-Agent collaboration. Use `ToolLoopAgent` + asynchronous communication patterns to implement a Multi-Agent network.
 
 - Pattern 1: Parallel network

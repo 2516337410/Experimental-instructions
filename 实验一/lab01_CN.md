@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
 }
 ```
 
-## 8.1.4 Tool Use
+### 8.1.4 Tool Use
 
 - 定义工具
 ```bash
@@ -228,7 +228,7 @@ generateText({
 })
 ```
 
-## 8.1.5 结构化输出
+### 8.1.5 结构化输出
 需要先安装Zod。Zod 提供了运行时类型校验，AI SDK 用它来确保 AI 传来的参数类型正确，同时也会把 schema 发给模型告知参数结构。
 
 ```bash
@@ -359,9 +359,9 @@ for await (const partial of partialObjectStream) {
 }
 ```
 
-# 8.2 AI SDK Agents
+## 8.2 AI SDK Agents
 
-## 8.2.1 基本用法
+### 8.2.1 基本用法
 
 - 定义 Agent
 ```bash
@@ -434,7 +434,7 @@ for (const step of result.steps) {
 }
 ```
 
-## 8.2.2 循环控制
+### 8.2.2 循环控制
 - stopWhen — 内置终止条件
 ```bash
 import {
@@ -531,7 +531,7 @@ const result = await agent.generate({
 })
 ```
 
-## 8.2.3 Memory
+### 8.2.3 Memory
 - 持久化对话历史（跨会话短期记忆）
 
 每次对话前从 DB 加载历史，对话结束后存回 DB。
@@ -655,7 +655,7 @@ ${memories.map(m => `- ${m.text}`).join('\n')}`,
 })
 ```
 
-## 8.2.4 Subagents
+### 8.2.4 Subagents
 - 调用 Subagents
 ```bash
 // 1. 定义专家 Agent
@@ -771,7 +771,7 @@ async function route(userQuestion: string) {
 }
 ```
 
-## Multi-Agent
+### Multi-Agent
 AI SDK 本身不内置"Multi-Agent 框架"，但它提供了构建多 Agent 协作所需的全部原语。用 ToolLoopAgent + 异步通信模式来实现 Multi-Agent 网络。
 
 - 模式 1：并行网络
