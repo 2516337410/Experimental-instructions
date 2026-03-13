@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI SDK 完全教程</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Serif+SC:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1c2030;
+    --border: #2a2f42;
+    --accent: #7c6af7;
+    --accent2: #3de8b0;
+    --accent3: #f7c46a;
+    --text: #e2e5f0;
+    --muted: #666d8a;
+    --code-bg: #0a0c10;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Serif SC', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(124,106,247,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 60px 0 40px;
+    text-align: center;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(124,106,247,0.15);
+    border: 1px solid rgba(124,106,247,0.4);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #e2e5f0 0%, var(--accent) 60%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 560px;
+    margin: 0 auto 40px;
+  }
+
+  /* Progress bar */
+  .progress-track {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .progress-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  .progress-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* Chapter nav */
+  .chapters-nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+    justify-content: center;
+  }
+
+  .ch-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .ch-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .ch-btn.active { background: rgba(124,106,247,0.2); border-color: var(--accent); color: var(--accent); }
+  .ch-btn.done { border-color: var(--accent2); color: var(--accent2); background: rgba(61,232,176,0.08); }
+
+  /* Sections */
+  .section {
+    display: none;
+    animation: fadeUp 0.4s ease;
+  }
+  .section.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    margin-bottom: 32px;
+  }
+
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .section-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .section-desc {
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent2);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent2);
+    border-radius: 50%;
+  }
+
+  /* Code blocks */
+  .code-wrap {
+    position: relative;
+    margin: 16px 0;
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+  .copy-btn.copied { color: var(--accent2); }
+
+  /* Syntax highlighting */
+  .kw { color: #c792ea; }
+  .fn { color: #82aaff; }
+  .str { color: #c3e88d; }
+  .cmt { color: #546e7a; font-style: italic; }
+  .num { color: #f78c6c; }
+  .obj { color: #ffcb6b; }
+  .op { color: #89ddff; }
+
+  /* Concept boxes */
+  .concept {
+    background: rgba(124,106,247,0.08);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .tip {
+    background: rgba(61,232,176,0.08);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .warn {
+    background: rgba(247,196,106,0.08);
+    border-left: 3px solid var(--accent3);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* Quiz */
+  .quiz-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+
+  .quiz-q {
+    font-size: 15px;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .quiz-opt {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s;
+    text-align: left;
+    color: var(--text);
+  }
+
+  .quiz-opt:hover { border-color: var(--accent); color: var(--accent); }
+  .quiz-opt.correct { background: rgba(61,232,176,0.15); border-color: var(--accent2); color: var(--accent2); }
+  .quiz-opt.wrong { background: rgba(255,80,80,0.1); border-color: #ff5050; color: #ff8080; }
+
+  .quiz-feedback {
+    margin-top: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    display: none;
+  }
+  .quiz-feedback.show { display: block; }
+
+  /* Nav buttons */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 40px 0 60px;
+    gap: 12px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary:hover { background: #9080ff; transform: translateY(-1px); }
+
+  .btn-sec {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-sec:hover { color: var(--text); border-color: var(--text); }
+
+  /* Divider */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  p { line-height: 1.8; margin-bottom: 12px; font-size: 15px; color: var(--text); }
+  strong { color: var(--accent2); font-weight: 600; }
+  em { color: var(--accent3); font-style: normal; }
+
+  /* Two-column */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Feature pill */
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+  }
+
+  .pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .pill.a { border-color: rgba(124,106,247,0.5); color: var(--accent); background: rgba(124,106,247,0.1); }
+  .pill.b { border-color: rgba(61,232,176,0.5); color: var(--accent2); background: rgba(61,232,176,0.1); }
+  .pill.c { border-color: rgba(247,196,106,0.5); color: var(--accent3); background: rgba(247,196,106,0.1); }
+
+  /* Final screen */
+  .final-screen {
+    text-align: center;
+    padding: 60px 0;
+  }
+
+  .trophy {
+    font-size: 64px;
+    margin-bottom: 24px;
+    animation: bounce 1s ease infinite alternate;
+  }
+
+  @keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-10px); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="badge">Interactive Tutorial</div>
+    <h1>AI SDK 完全教程</h1>
+    <p class="subtitle">Vercel 出品的 <strong>ai</strong> 库，用最简洁的方式把 AI 集成进你的 JS/TS 项目。本教程带你从零掌握核心概念。</p>
+  </header>
+
+  <div class="progress-track">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <span class="progress-label" id="progressLabel">0 / 5 章节</span>
+  </div>
+
+  <div class="chapters-nav" id="chapNav">
+    <button class="ch-btn active" onclick="goto(0)">01 · 概览</button>
+    <button class="ch-btn" onclick="goto(1)">02 · 安装配置</button>
+    <button class="ch-btn" onclick="goto(2)">03 · 文本生成</button>
+    <button class="ch-btn" onclick="goto(3)">04 · 流式输出</button>
+    <button class="ch-btn" onclick="goto(4)">05 · 工具调用</button>
+    <button class="ch-btn" onclick="goto(5)">06 · 结构化输出</button>
+  </div>
+
+  <!-- ============ SECTION 0 ============ -->
+  <div class="section active" id="s0">
+    <div class="section-header">
+      <div class="section-num">CHAPTER 01</div>
+      <div class="section-title">什么是 AI SDK？</div>
+      <p class="section-desc">Vercel AI SDK（npm 包名 <code style="color:var(--accent2)">ai</code>）是目前最流行的 JavaScript/TypeScript AI 集成库，专为 Next.js、Node.js、React 等场景设计。</p>
+    </div>
+
+    <div class="concept">
+      <strong>🎯 核心价值</strong><br>
+      一套统一的 API，支持 OpenAI、Anthropic Claude、Google Gemini、Mistral 等几乎所有主流模型提供商。切换模型只需换一行代码。
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">核心包</div>
+        <div class="pills">
+          <span class="pill a">ai</span>
+          <span class="pill b">@ai-sdk/openai</span>
+          <span class="pill c">@ai-sdk/anthropic</span>
+          <span class="pill a">@ai-sdk/google</span>
+        </div>
+        <p style="font-size:13px;margin-top:12px;"><code style="color:var(--muted)">ai</code> 是核心库，provider 包按需安装。</p>
+      </div>
+      <div class="card">
+        <div class="card-title">四大核心功能</div>
+        <div class="pills">
+          <span class="pill a">generateText</span>
+          <span class="pill b">streamText</span>
+          <span class="pill c">generateObject</span>
+          <span class="pill a">streamObject</span>
+        </div>
+        <p style="font-size:13px;margin-top:12px;">覆盖 99% 的 AI 应用场景。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">与直接调用 OpenAI SDK 的区别</div>
+      <div class="two-col">
+        <div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">❌ 直接用 OpenAI SDK</p>
+          <pre style="font-size:12px;"><span class="cmt">// 每个模型写法不同，难以切换</span>
+<span class="kw">const</span> res <span class="op">=</span> <span class="kw">await</span> openai.chat
+  .completions.create({
+    model: <span class="str">'gpt-4'</span>,
+    messages: [...]
+  })
+<span class="kw">const</span> text <span class="op">=</span> res.choices[<span class="num">0</span>]
+  .message.content</pre>
+        </div>
+        <div>
+          <p style="font-size:13px;color:var(--accent2);margin-bottom:8px;">✅ 用 AI SDK</p>
+          <pre style="font-size:12px;"><span class="cmt">// 统一 API，模型随便换</span>
+<span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4'</span>),
+  prompt: <span class="str">'...'</span>
+})</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="quiz-box">
+      <div class="quiz-q">🧠 小测验：AI SDK 的 <code style="color:var(--accent2)">ai</code> 包是什么性质的包？</div>
+      <div class="quiz-options">
+        <button class="quiz-opt" onclick="answer(this, false, 'ai 包是核心运行时，不直接包含 OpenAI 等 provider 的 API key 逻辑。')">A. 一个包含所有模型 API 的大包</button>
+        <button class="quiz-opt" onclick="answer(this, true, '✅ 正确！ai 是核心库，提供统一抽象。具体模型需要单独安装 @ai-sdk/openai 等 provider 包。')">B. 核心运行时库，模型 provider 单独安装</button>
+        <button class="quiz-opt" onclick="answer(this, false, 'AI SDK 与 LangChain 是不同的项目，AI SDK 由 Vercel 开发。')">C. LangChain 的 JS 版本</button>
+      </div>
+      <div class="quiz-feedback" id="qf0"></div>
+    </div>
+
+    <div class="nav-row">
+      <span></span>
+      <button class="btn-primary" onclick="next()">下一章：安装配置 →</button>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 1 ============ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">CHAPTER 02</div>
+      <div class="section-title">安装与配置</div>
+      <p class="section-desc">以 Next.js + OpenAI 为例，演示完整的初始化流程。其他 provider 逻辑相同。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Step 1 — 创建 Next.js 项目</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="fn">npx</span> create-next-app@latest my-ai-app <span class="op">--</span>typescript
+<span class="fn">cd</span> my-ai-app</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Step 2 — 安装依赖</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="fn">npm</span> install ai @ai-sdk/openai
+
+<span class="cmt"># 如果用 Anthropic Claude：</span>
+<span class="fn">npm</span> install ai @ai-sdk/anthropic
+
+<span class="cmt"># 如果用 Google Gemini：</span>
+<span class="fn">npm</span> install ai @ai-sdk/google</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Step 3 — 配置 API Key（.env.local）</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cmt"># OpenAI</span>
+<span class="obj">OPENAI_API_KEY</span>=sk-xxxxxxxxxxxxxxxx
+
+<span class="cmt"># Anthropic</span>
+<span class="obj">ANTHROPIC_API_KEY</span>=sk-ant-xxxxxxxxxxxxxxxx
+
+<span class="cmt"># Google</span>
+<span class="obj">GOOGLE_GENERATIVE_AI_API_KEY</span>=AIzaxxxxxxxx</pre>
+      </div>
+      <div class="warn">
+        ⚠️ 永远不要把 .env.local 提交到 Git！确认 .gitignore 中已包含它。API key 的 provider 会根据包名自动读取对应的环境变量。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Provider 初始化方式对比</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+<span class="kw">import</span> { anthropic } <span class="kw">from</span> <span class="str">'@ai-sdk/anthropic'</span>
+<span class="kw">import</span> { google } <span class="kw">from</span> <span class="str">'@ai-sdk/google'</span>
+
+<span class="cmt">// 用法完全一样，只换 model 对象！</span>
+<span class="kw">const</span> model1 <span class="op">=</span> <span class="fn">openai</span>(<span class="str">'gpt-4o'</span>)
+<span class="kw">const</span> model2 <span class="op">=</span> <span class="fn">anthropic</span>(<span class="str">'claude-3-5-sonnet-20241022'</span>)
+<span class="kw">const</span> model3 <span class="op">=</span> <span class="fn">google</span>(<span class="str">'gemini-1.5-pro'</span>)</pre>
+      </div>
+    </div>
+
+    <div class="tip">
+      💡 AI SDK 会自动从环境变量读取 API Key。比如 <code>@ai-sdk/openai</code> 会自动读取 <code>OPENAI_API_KEY</code>，你不需要手动传入。
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-sec" onclick="prev()">← 上一章</button>
+      <button class="btn-primary" onclick="next()">下一章：文本生成 →</button>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 2 ============ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">CHAPTER 03</div>
+      <div class="section-title">generateText — 文本生成</div>
+      <p class="section-desc">最基础的功能：发一个 prompt，得到一个完整的文本回复。适合不需要实时显示的场景（分类、摘要、翻译等）。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">最简单的例子</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { generateText } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+
+<span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  prompt: <span class="str">'用一句话解释什么是量子纠缠'</span>,
+})
+
+console.<span class="fn">log</span>(text)
+<span class="cmt">// 量子纠缠是指两个粒子的状态相互关联...</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">带 system prompt 的对话</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  system: <span class="str">'你是一个专业的代码审查工程师，用简洁的中文回答'</span>,
+  prompt: <span class="str">'这段代码有什么问题：for(var i=0;i<10;i++){}'</span>,
+})
+
+console.<span class="fn">log</span>(text)</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">多轮对话（messages 格式）</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  messages: [
+    { role: <span class="str">'user'</span>, content: <span class="str">'我叫小明'</span> },
+    { role: <span class="str">'assistant'</span>, content: <span class="str">'你好，小明！有什么我能帮你的？'</span> },
+    { role: <span class="str">'user'</span>, content: <span class="str">'你还记得我叫什么吗？'</span> },
+  ],
+})
+
+console.<span class="fn">log</span>(text)
+<span class="cmt">// "当然记得，你叫小明！"</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">返回值解构 — 不止有 text</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  prompt: <span class="str">'讲个冷笑话'</span>,
+})
+
+console.<span class="fn">log</span>(result.text)           <span class="cmt">// 主要内容</span>
+console.<span class="fn">log</span>(result.usage)          <span class="cmt">// { promptTokens, completionTokens, totalTokens }</span>
+console.<span class="fn">log</span>(result.finishReason)   <span class="cmt">// 'stop' | 'length' | 'tool-calls'</span>
+console.<span class="fn">log</span>(result.response)       <span class="cmt">// 原始响应对象</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">在 Next.js API Route 中使用</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cmt">// app/api/summarize/route.ts</span>
+<span class="kw">import</span> { generateText } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+<span class="kw">import</span> { NextRequest } <span class="kw">from</span> <span class="str">'next/server'</span>
+
+<span class="kw">export async function</span> <span class="fn">POST</span>(req: NextRequest) {
+  <span class="kw">const</span> { content } <span class="op">=</span> <span class="kw">await</span> req.<span class="fn">json</span>()
+  
+  <span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+    model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+    system: <span class="str">'将用户输入摘要为3句话'</span>,
+    prompt: content,
+  })
+  
+  <span class="kw">return</span> Response.<span class="fn">json</span>({ summary: text })
+}</pre>
+      </div>
+    </div>
+
+    <div class="quiz-box">
+      <div class="quiz-q">🧠 小测验：<code>generateText</code> 最适合哪种场景？</div>
+      <div class="quiz-options">
+        <button class="quiz-opt" onclick="answer(this, false, 'generateText 会等待完整结果，在聊天界面会让用户等待，体验差。这种场景更适合 streamText。')">A. 聊天机器人的实时对话界面</button>
+        <button class="quiz-opt" onclick="answer(this, true, '✅ 正确！后台批处理不需要实时展示，用 generateText 等待完整结果更简单。')">B. 批量处理文档摘要的后台任务</button>
+        <button class="quiz-opt" onclick="answer(this, false, '代码补全通常需要快速响应，流式会更好。')">C. 实时代码补全</button>
+      </div>
+      <div class="quiz-feedback" id="qf2"></div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-sec" onclick="prev()">← 上一章</button>
+      <button class="btn-primary" onclick="next()">下一章：流式输出 →</button>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 3 ============ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">CHAPTER 04</div>
+      <div class="section-title">streamText — 流式输出</div>
+      <p class="section-desc">让 AI 的回答像 ChatGPT 一样"一个字一个字"地出现。这是现代 AI 应用最核心的体验。</p>
+    </div>
+
+    <div class="concept">
+      🌊 <strong>流式输出原理</strong>：AI 模型每生成一个 token（词片段）就立即发送，而不是等全部生成完再返回。这让用户感知到响应时间极短。
+    </div>
+
+    <div class="card">
+      <div class="card-title">Server Side — Next.js API Route</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cmt">// app/api/chat/route.ts</span>
+<span class="kw">import</span> { streamText } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+
+<span class="kw">export async function</span> <span class="fn">POST</span>(req: Request) {
+  <span class="kw">const</span> { messages } <span class="op">=</span> <span class="kw">await</span> req.<span class="fn">json</span>()
+
+  <span class="kw">const</span> result <span class="op">=</span> <span class="fn">streamText</span>({
+    model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+    messages,
+  })
+
+  <span class="cmt">// 关键：把流转成 Response 返回给前端</span>
+  <span class="kw">return</span> result.<span class="fn">toDataStreamResponse</span>()
+}</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Client Side — useChat Hook（最简方式）</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cmt">// app/page.tsx</span>
+<span class="str">'use client'</span>
+<span class="kw">import</span> { useChat } <span class="kw">from</span> <span class="str">'ai/react'</span>
+
+<span class="kw">export default function</span> <span class="fn">Chat</span>() {
+  <span class="kw">const</span> { messages, input, handleInputChange, handleSubmit } <span class="op">=</span> <span class="fn">useChat</span>()
+
+  <span class="kw">return</span> (
+    &lt;<span class="obj">div</span>&gt;
+      {messages.<span class="fn">map</span>(m <span class="op">=&gt;</span> (
+        &lt;<span class="obj">div</span> key={m.id}&gt;
+          &lt;<span class="obj">b</span>&gt;{m.role}&lt;/<span class="obj">b</span>&gt;: {m.content}
+        &lt;/<span class="obj">div</span>&gt;
+      ))}
+      &lt;<span class="obj">form</span> onSubmit={handleSubmit}&gt;
+        &lt;<span class="obj">input</span> value={input} onChange={handleInputChange} /&gt;
+        &lt;<span class="obj">button</span> type=<span class="str">"submit"</span>&gt;发送&lt;/<span class="obj">button</span>&gt;
+      &lt;/<span class="obj">form</span>&gt;
+    &lt;/<span class="obj">div</span>&gt;
+  )
+}
+
+<span class="cmt">// 🎉 就这些！已经是一个可用的流式聊天界面了</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">useChat 的完整能力</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">const</span> {
+  messages,         <span class="cmt">// 聊天记录数组</span>
+  input,            <span class="cmt">// 当前输入框的值</span>
+  handleInputChange,<span class="cmt">// 输入框 onChange 处理器</span>
+  handleSubmit,     <span class="cmt">// 表单 onSubmit 处理器</span>
+  isLoading,        <span class="cmt">// 是否正在等待 AI 回复</span>
+  stop,             <span class="cmt">// 中断当前生成</span>
+  reload,           <span class="cmt">// 重新生成最后一条回复</span>
+  error,            <span class="cmt">// 错误信息</span>
+} <span class="op">=</span> <span class="fn">useChat</span>({
+  api: <span class="str">'/api/chat'</span>,  <span class="cmt">// 默认值，可自定义</span>
+  initialMessages: [],<span class="cmt">// 初始消息</span>
+  onFinish: (msg) <span class="op">=&gt;</span> { <span class="cmt">/* 生成完成回调 */</span> },
+  onError: (err) <span class="op">=&gt;</span> { <span class="cmt">/* 错误回调 */</span> },
+})</pre>
+      </div>
+    </div>
+
+    <div class="tip">
+      💡 <strong>useChat</strong> 是 AI SDK 最常用的 Hook，它自动管理消息历史、处理流式数据解析，以及状态更新。90% 的聊天应用用它就够了。
+    </div>
+
+    <div class="card">
+      <div class="card-title">不用 Hook，手动处理流（Node.js 环境）</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { streamText } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+
+<span class="kw">const</span> result <span class="op">=</span> <span class="fn">streamText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  prompt: <span class="str">'写一首五言绝句'</span>,
+})
+
+<span class="cmt">// 逐 chunk 处理</span>
+<span class="kw">for await</span> (<span class="kw">const</span> chunk <span class="kw">of</span> result.textStream) {
+  process.stdout.<span class="fn">write</span>(chunk) <span class="cmt">// 实时打印每个 token</span>
+}
+
+<span class="cmt">// 或者等待全部完成</span>
+<span class="kw">const</span> fullText <span class="op">=</span> <span class="kw">await</span> result.text</pre>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-sec" onclick="prev()">← 上一章</button>
+      <button class="btn-primary" onclick="next()">下一章：工具调用 →</button>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 4 ============ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">CHAPTER 05</div>
+      <div class="section-title">Tool Use — 工具调用</div>
+      <p class="section-desc">让 AI 不只会"说话"，还能调用你定义的函数。这是构建 AI Agent 的基础能力。</p>
+    </div>
+
+    <div class="concept">
+      🔧 <strong>Tool Use 的原理</strong>：你告诉 AI "我有这些工具可以用"，AI 根据用户请求决定要不要调用某个工具、传什么参数，然后你执行这个函数，把结果返回给 AI，AI 再给出最终回答。
+    </div>
+
+    <div class="card">
+      <div class="card-title">定义工具 — 用 tool() 函数</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { generateText, tool } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+<span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span> <span class="cmt">// AI SDK 用 zod 定义参数类型</span>
+
+<span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  prompt: <span class="str">'北京今天天气怎么样？'</span>,
+  tools: {
+    <span class="fn">getWeather</span>: <span class="fn">tool</span>({
+      description: <span class="str">'获取指定城市的天气信息'</span>,
+      parameters: z.<span class="fn">object</span>({
+        city: z.<span class="fn">string</span>().<span class="fn">describe</span>(<span class="str">'城市名称'</span>),
+        unit: z.<span class="fn">enum</span>([<span class="str">'celsius'</span>, <span class="str">'fahrenheit'</span>])
+          .<span class="fn">default</span>(<span class="str">'celsius'</span>),
+      }),
+      <span class="kw">execute</span>: <span class="kw">async</span> ({ city, unit }) <span class="op">=&gt;</span> {
+        <span class="cmt">// 这里可以真的调用天气 API</span>
+        <span class="kw">return</span> { temperature: <span class="num">22</span>, condition: <span class="str">'晴'</span>, city }
+      },
+    }),
+  },
+})
+
+console.<span class="fn">log</span>(text)
+<span class="cmt">// "北京今天天气晴朗，气温 22°C，适合外出。"</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">多工具 + maxSteps（自动多步调用）</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o'</span>),
+  prompt: <span class="str">'查询北京和上海的天气，然后比较哪个更热'</span>,
+  tools: {
+    getWeather: <span class="fn">tool</span>({<span class="cmt">/* ... */</span>}),
+    compareWeather: <span class="fn">tool</span>({<span class="cmt">/* ... */</span>}),
+  },
+  maxSteps: <span class="num">5</span>, <span class="cmt">// AI 可以自动连续调用多次工具</span>
+})
+
+<span class="cmt">// 查看 AI 的推理步骤</span>
+<span class="kw">for</span> (<span class="kw">const</span> step <span class="kw">of</span> result.steps) {
+  console.<span class="fn">log</span>(<span class="str">'工具调用:'</span>, step.toolCalls)
+  console.<span class="fn">log</span>(<span class="str">'工具结果:'</span>, step.toolResults)
+}</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">toolChoice — 控制工具使用策略</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  tools: { <span class="cmt">/* ... */</span> },
+  
+  <span class="cmt">// auto: AI 自己决定要不要用工具（默认）</span>
+  toolChoice: <span class="str">'auto'</span>,
+  
+  <span class="cmt">// required: 强制 AI 必须用工具</span>
+  toolChoice: <span class="str">'required'</span>,
+  
+  <span class="cmt">// none: 禁止用工具</span>
+  toolChoice: <span class="str">'none'</span>,
+  
+  <span class="cmt">// 指定必须用某个特定工具</span>
+  toolChoice: { type: <span class="str">'tool'</span>, toolName: <span class="str">'getWeather'</span> },
+})</pre>
+      </div>
+    </div>
+
+    <div class="tip">
+      💡 需要先 <code>npm install zod</code>。Zod 提供了运行时类型校验，AI SDK 用它来确保 AI 传来的参数类型正确，同时也会把 schema 发给模型告知参数结构。
+    </div>
+
+    <div class="quiz-box">
+      <div class="quiz-q">🧠 小测验：设置 <code>maxSteps: 3</code> 意味着什么？</div>
+      <div class="quiz-options">
+        <button class="quiz-opt" onclick="answer(this, false, 'maxSteps 与 token 限制无关，那是 maxTokens 参数。')">A. 限制生成最多 3 个 token</button>
+        <button class="quiz-opt" onclick="answer(this, false, '工具数量限制不是 maxSteps 控制的。')">B. 最多只能定义 3 个工具</button>
+        <button class="quiz-opt" onclick="answer(this, true, '✅ 正确！maxSteps 允许 AI 在一次请求中最多自动调用工具 3 次，实现多步骤推理。')">C. AI 可以最多连续自动调用工具 3 次</button>
+      </div>
+      <div class="quiz-feedback" id="qf4"></div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-sec" onclick="prev()">← 上一章</button>
+      <button class="btn-primary" onclick="next()">下一章：结构化输出 →</button>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 5 ============ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">CHAPTER 06</div>
+      <div class="section-title">generateObject — 结构化输出</div>
+      <p class="section-desc">让 AI 直接返回 JSON 对象而不是自由文本。告别手动解析，直接拿到类型安全的数据。</p>
+    </div>
+
+    <div class="concept">
+      📦 <strong>为什么需要结构化输出？</strong><br>
+      如果让 AI 返回文本，你还需要自己解析。用 <code>generateObject</code>，AI SDK 保证返回的数据严格符合你定义的 Zod schema，省去了大量解析代码。
+    </div>
+
+    <div class="card">
+      <div class="card-title">基础用法</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { generateObject } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+<span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span>
+
+<span class="kw">const</span> { object } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateObject</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  schema: z.<span class="fn">object</span>({
+    name: z.<span class="fn">string</span>(),
+    age: z.<span class="fn">number</span>(),
+    skills: z.<span class="fn">array</span>(z.<span class="fn">string</span>()),
+    isStudent: z.<span class="fn">boolean</span>(),
+  }),
+  prompt: <span class="str">'生成一个虚构的程序员角色信息'</span>,
+})
+
+console.<span class="fn">log</span>(object)
+<span class="cmt">// { name: '张伟', age: 27, skills: ['TypeScript', 'React'], isStudent: false }</span>
+<span class="cmt">// ✅ 完全类型安全，无需 JSON.parse！</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">实际应用：从文本提取结构化数据</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">const</span> email <span class="op">=</span> <span class="str">`
+  发件人: 王经理
+  时间: 明天下午3点
+  地点: 会议室B
+  内容: 季度复盘会议，请准备Q3数据报告
+`</span>
+
+<span class="kw">const</span> { object: meeting } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateObject</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  schema: z.<span class="fn">object</span>({
+    title: z.<span class="fn">string</span>(),
+    organizer: z.<span class="fn">string</span>(),
+    location: z.<span class="fn">string</span>(),
+    time: z.<span class="fn">string</span>(),
+    preparation: z.<span class="fn">array</span>(z.<span class="fn">string</span>()),
+  }),
+  prompt: <span class="str">`从以下邮件中提取会议信息：\n</span>${email}<span class="str">`</span>,
+})
+
+console.<span class="fn">log</span>(meeting.title)       <span class="cmt">// "季度复盘会议"</span>
+console.<span class="fn">log</span>(meeting.organizer)    <span class="cmt">// "王经理"</span>
+console.<span class="fn">log</span>(meeting.preparation)  <span class="cmt">// ["准备Q3数据报告"]</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">output 模式选择</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cmt">// 模式1: object（默认）—— 返回单个对象</span>
+<span class="fn">generateObject</span>({ schema: z.<span class="fn">object</span>({...}), ... })
+
+<span class="cmt">// 模式2: array —— 返回对象数组（批量生成）</span>
+<span class="kw">const</span> { object: products } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateObject</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  output: <span class="str">'array'</span>,
+  schema: z.<span class="fn">object</span>({
+    name: z.<span class="fn">string</span>(),
+    price: z.<span class="fn">number</span>(),
+  }),
+  prompt: <span class="str">'生成5个虚构的软件产品及其价格'</span>,
+})
+<span class="cmt">// products: [{ name: 'CloudSync Pro', price: 99 }, ...]</span>
+
+<span class="cmt">// 模式3: enum —— 让 AI 做选择题</span>
+<span class="kw">const</span> { object: sentiment } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateObject</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  output: <span class="str">'enum'</span>,
+  enum: [<span class="str">'positive'</span>, <span class="str">'negative'</span>, <span class="str">'neutral'</span>],
+  prompt: <span class="str">'今天发布新功能，用户反馈很好！'</span>,
+})
+<span class="cmt">// sentiment: 'positive'</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">streamObject — 流式结构化输出（大列表神器）</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { streamObject } <span class="kw">from</span> <span class="str">'ai'</span>
+
+<span class="kw">const</span> { partialObjectStream } <span class="op">=</span> <span class="fn">streamObject</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  schema: z.<span class="fn">object</span>({
+    items: z.<span class="fn">array</span>(z.<span class="fn">object</span>({
+      title: z.<span class="fn">string</span>(),
+      desc: z.<span class="fn">string</span>(),
+    }))
+  }),
+  prompt: <span class="str">'列出10个学习 TypeScript 的建议'</span>,
+})
+
+<span class="cmt">// 随着生成进行，partial 对象逐渐填充</span>
+<span class="kw">for await</span> (<span class="kw">const</span> partial <span class="kw">of</span> partialObjectStream) {
+  console.<span class="fn">log</span>(partial.items<span class="op">?.</span>length) <span class="cmt">// 逐渐从 0 增加到 10</span>
+}</pre>
+      </div>
+    </div>
+
+    <div class="quiz-box">
+      <div class="quiz-q">🧠 小测验：如果我想让 AI 对一篇文章进行情感分类（正面/负面/中性），最适合的方式是？</div>
+      <div class="quiz-options">
+        <button class="quiz-opt" onclick="answer(this, false, 'generateText 会返回自由文本，你还需要自己解析，容易出错。')">A. generateText，然后手动解析回复</button>
+        <button class="quiz-opt" onclick="answer(this, false, '工具调用更适合需要执行外部操作的场景，情感分类不需要。')">B. 定义一个 tool，让 AI 调用</button>
+        <button class="quiz-opt" onclick="answer(this, true, "✅ 完美！generateObject 配合 output: 'enum' 让 AI 直接从你定义的选项中选一个，类型安全且稳定。")">C. generateObject 配合 output: 'enum'</button>
+      </div>
+      <div class="quiz-feedback" id="qf5"></div>
+    </div>
+
+    <!-- Final -->
+    <div class="final-screen">
+      <div class="trophy">🏆</div>
+      <div class="section-title" style="margin-bottom:16px;">教程完成！</div>
+      <p style="color:var(--muted);max-width:480px;margin:0 auto 24px;">你已经掌握了 AI SDK 的四大核心能力。现在可以用它构建任何 AI 应用了。</p>
+
+      <div class="card" style="text-align:left;max-width:500px;margin:0 auto;">
+        <div class="card-title">下一步学习资源</div>
+        <p style="font-size:14px;margin-bottom:8px;">📚 <a href="https://sdk.vercel.ai" style="color:var(--accent);" target="_blank">sdk.vercel.ai</a> — 官方文档</p>
+        <p style="font-size:14px;margin-bottom:8px;">🧪 <a href="https://sdk.vercel.ai/examples" style="color:var(--accent);" target="_blank">sdk.vercel.ai/examples</a> — 完整示例</p>
+        <p style="font-size:14px;margin-bottom:8px;">🔖 重要进阶主题：<strong>Embedding</strong>（语义搜索）、<strong>Image 输入</strong>（多模态）、<strong>Provider Middleware</strong>（日志/限速）</p>
+      </div>
+
+      <div style="margin-top:24px;">
+        <button class="btn-sec" onclick="restart()">🔄 重新学习</button>
+      </div>
+    </div>
+
+    <div style="height:40px;"></div>
+  </div>
+
+</div>
+
+<script>
+  let current = 0;
+  const total = 6;
+  const done = new Set();
+
+  function goto(idx) {
+    document.getElementById('s' + current).classList.remove('active');
+    current = idx;
+    document.getElementById('s' + current).classList.add('active');
+    
+    // Update nav
+    const btns = document.querySelectorAll('.ch-btn');
+    btns.forEach((b, i) => {
+      b.classList.remove('active');
+      if (done.has(i)) b.classList.add('done');
+      else b.classList.remove('done');
+    });
+    btns[current].classList.add('active');
+    
+    // Progress
+    const pct = (done.size / total) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = done.size + ' / ' + total + ' 章节';
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function next() {
+    done.add(current);
+    if (current < total - 1) goto(current + 1);
+  }
+
+  function prev() {
+    if (current > 0) goto(current - 1);
+  }
+
+  function restart() {
+    done.clear();
+    goto(0);
+  }
+
+  function answer(btn, correct, feedback) {
+    const parent = btn.closest('.quiz-box');
+    const opts = parent.querySelectorAll('.quiz-opt');
+    const fb = parent.querySelector('.quiz-feedback');
+    
+    opts.forEach(o => o.disabled = true);
+    btn.classList.add(correct ? 'correct' : 'wrong');
+    
+    fb.textContent = feedback;
+    fb.style.color = correct ? 'var(--accent2)' : '#ff8080';
+    fb.classList.add('show');
+  }
+
+  function copyCode(btn) {
+    const pre = btn.nextElementSibling;
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+      btn.textContent = 'copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'copy';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+</script>
+</body>
+</html>

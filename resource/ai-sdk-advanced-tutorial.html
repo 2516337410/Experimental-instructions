@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI SDK 高阶教程</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #06080f;
+    --surface: #0e1118;
+    --surface2: #161b27;
+    --surface3: #1e2535;
+    --border: #232a3d;
+    --border2: #2e3850;
+    --gold: #e8b84b;
+    --gold2: #f5d680;
+    --teal: #2dd4bf;
+    --rose: #fb7185;
+    --sky: #38bdf8;
+    --text: #dde3f0;
+    --muted: #5a6480;
+    --muted2: #8290b0;
+    --code-bg: #050710;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: 400;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* Radial glow */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80vw;
+    height: 60vh;
+    background: radial-gradient(ellipse, rgba(232,184,75,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 0 28px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 72px 0 48px;
+  }
+
+  .pre-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .badge-pill {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 2px;
+  }
+
+  .badge-adv {
+    background: rgba(232,184,75,0.12);
+    border: 1px solid rgba(232,184,75,0.35);
+    color: var(--gold);
+  }
+
+  .badge-v2 {
+    background: rgba(45,212,191,0.08);
+    border: 1px solid rgba(45,212,191,0.25);
+    color: var(--teal);
+  }
+
+  h1 {
+    font-size: clamp(34px, 5.5vw, 58px);
+    font-weight: 700;
+    line-height: 1.08;
+    margin-bottom: 20px;
+    letter-spacing: -1px;
+  }
+
+  .h1-line1 { color: var(--text); }
+  .h1-line2 {
+    background: linear-gradient(100deg, var(--gold) 0%, var(--gold2) 50%, var(--teal) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    color: var(--muted2);
+    font-size: 15px;
+    line-height: 1.75;
+    max-width: 580px;
+    margin-bottom: 40px;
+  }
+
+  /* ── CHAPTER MAP ── */
+  .chapter-map {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 48px;
+  }
+
+  @media (max-width: 640px) { .chapter-map { grid-template-columns: 1fr; } }
+
+  .ch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ch-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .ch-card:nth-child(1)::before { background: radial-gradient(ellipse at top left, rgba(232,184,75,0.08), transparent 70%); }
+  .ch-card:nth-child(2)::before { background: radial-gradient(ellipse at top left, rgba(56,189,248,0.08), transparent 70%); }
+  .ch-card:nth-child(3)::before { background: radial-gradient(ellipse at top left, rgba(45,212,191,0.08), transparent 70%); }
+
+  .ch-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .ch-card:hover::before { opacity: 1; }
+  .ch-card.active { border-color: var(--gold); }
+  .ch-card.active::before { opacity: 1; }
+  .ch-card.done { border-color: rgba(45,212,191,0.4); }
+
+  .ch-icon { font-size: 22px; margin-bottom: 8px; }
+  .ch-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .ch-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .ch-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .ch-done-mark {
+    position: absolute;
+    top: 12px; right: 12px;
+    font-size: 12px;
+    color: var(--teal);
+    display: none;
+  }
+  .ch-card.done .ch-done-mark { display: block; }
+
+  /* ── PROGRESS ── */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 48px;
+    padding: 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .prog-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .prog-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border2);
+    transition: all 0.3s;
+  }
+
+  .prog-dot.done { background: var(--teal); }
+  .prog-dot.active { background: var(--gold); transform: scale(1.3); }
+
+  .prog-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  /* ── SECTIONS ── */
+  .section { display: none; animation: reveal 0.45s cubic-bezier(.22,1,.36,1); }
+  .section.active { display: block; }
+
+  @keyframes reveal {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .sec-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .sec-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .sec-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .tag-gold { background: rgba(232,184,75,0.12); color: var(--gold); border: 1px solid rgba(232,184,75,0.25); }
+  .tag-sky { background: rgba(56,189,248,0.1); color: var(--sky); border: 1px solid rgba(56,189,248,0.25); }
+  .tag-teal { background: rgba(45,212,191,0.1); color: var(--teal); border: 1px solid rgba(45,212,191,0.25); }
+  .tag-rose { background: rgba(251,113,133,0.1); color: var(--rose); border: 1px solid rgba(251,113,133,0.25); }
+
+  .sec-title {
+    font-size: clamp(24px, 4vw, 36px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 16px;
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  .sec-desc {
+    color: var(--muted2);
+    line-height: 1.8;
+    font-size: 14.5px;
+    max-width: 680px;
+    margin-bottom: 32px;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 26px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .card-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted2);
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-label::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+
+  /* ── CODE ── */
+  .code-wrap { position: relative; margin: 12px 0; }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 22px;
+    overflow-x: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    tab-size: 2;
+  }
+
+  .file-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    padding: 4px 12px 4px 14px;
+    border-radius: 6px 6px 0 0;
+    display: inline-block;
+    margin-top: 12px;
+  }
+
+  .file-tag + .code-wrap { margin-top: 0; }
+  .file-tag + .code-wrap pre { border-radius: 0 8px 8px 8px; margin-top: 0; }
+
+  .copy-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .copy-btn:hover { color: var(--gold); border-color: rgba(232,184,75,0.4); }
+  .copy-btn.copied { color: var(--teal); border-color: rgba(45,212,191,0.4); }
+
+  /* Syntax */
+  .kw { color: #c4a8ff; }
+  .fn { color: #79b8ff; }
+  .str { color: #9ecbff; }
+  .cmt { color: #444d6e; font-style: italic; }
+  .num { color: #f97583; }
+  .obj { color: #ffea7f; }
+  .op { color: #79d4f8; }
+  .type { color: #f97583; }
+  .prop { color: #b8b8ff; }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 18px 0;
+    font-size: 14px;
+    line-height: 1.75;
+    display: flex;
+    gap: 12px;
+  }
+
+  .callout-icon { flex-shrink: 0; font-size: 16px; }
+
+  .callout-concept {
+    background: rgba(232,184,75,0.07);
+    border: 1px solid rgba(232,184,75,0.2);
+    color: #c9a63c;
+  }
+
+  .callout-tip {
+    background: rgba(45,212,191,0.07);
+    border: 1px solid rgba(45,212,191,0.2);
+    color: #22b89e;
+  }
+
+  .callout-warn {
+    background: rgba(251,113,133,0.07);
+    border: 1px solid rgba(251,113,133,0.2);
+    color: #d9607a;
+  }
+
+  .callout-sky {
+    background: rgba(56,189,248,0.07);
+    border: 1px solid rgba(56,189,248,0.2);
+    color: #2ea8d8;
+  }
+
+  /* ── DIAGRAM ── */
+  .diagram {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px;
+    margin: 18px 0;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    line-height: 2;
+    overflow-x: auto;
+  }
+
+  .d-box {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .d-box-gold { background: rgba(232,184,75,0.15); border: 1px solid rgba(232,184,75,0.4); color: var(--gold); }
+  .d-box-sky { background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.35); color: var(--sky); }
+  .d-box-teal { background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.35); color: var(--teal); }
+  .d-box-rose { background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.35); color: var(--rose); }
+  .d-arrow { color: var(--muted); margin: 0 8px; }
+
+  /* ── TWO COL ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  @media (max-width: 620px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── QUIZ ── */
+  .quiz {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 28px 0;
+  }
+
+  .quiz-header {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .quiz-q {
+    font-size: 14.5px;
+    line-height: 1.65;
+    margin-bottom: 18px;
+    color: var(--text);
+  }
+
+  .quiz-opts { display: flex; flex-direction: column; gap: 8px; }
+
+  .quiz-opt {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 11px 16px;
+    font-size: 13px;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    color: var(--muted2);
+    line-height: 1.5;
+  }
+  .quiz-opt:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+  .quiz-opt.correct { background: rgba(45,212,191,0.1); border-color: var(--teal); color: var(--teal); }
+  .quiz-opt.wrong { background: rgba(251,113,133,0.08); border-color: var(--rose); color: var(--rose); }
+
+  .quiz-fb {
+    margin-top: 14px;
+    font-size: 13px;
+    line-height: 1.65;
+    display: none;
+    padding: 10px 14px;
+    border-radius: 6px;
+  }
+  .quiz-fb.show { display: block; }
+  .quiz-fb.ok { background: rgba(45,212,191,0.08); color: var(--teal); }
+  .quiz-fb.ng { background: rgba(251,113,133,0.08); color: var(--rose); }
+
+  /* ── STEP LIST ── */
+  .step-list { margin: 16px 0; }
+  .step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(232,184,75,0.1);
+    border: 1px solid rgba(232,184,75,0.3);
+    color: var(--gold);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 500; font-size: 14px; margin-bottom: 6px; color: var(--text); }
+  .step-desc { font-size: 13px; color: var(--muted2); line-height: 1.65; }
+
+  /* ── NAV ── */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 32px 0 72px;
+    gap: 12px;
+  }
+
+  .btn-next {
+    background: var(--gold);
+    color: var(--bg);
+    border: none;
+    padding: 11px 28px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .btn-next:hover { background: var(--gold2); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(232,184,75,0.3); }
+
+  .btn-back {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border2);
+    padding: 11px 22px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-back:hover { color: var(--text); border-color: var(--text); }
+
+  /* ── FINAL ── */
+  .final {
+    text-align: center;
+    padding: 48px 0 32px;
+  }
+
+  .final-glow {
+    font-size: 72px;
+    margin-bottom: 28px;
+    filter: drop-shadow(0 0 24px rgba(232,184,75,0.5));
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% { filter: drop-shadow(0 0 16px rgba(232,184,75,0.4)); }
+    50% { filter: drop-shadow(0 0 32px rgba(232,184,75,0.8)); }
+  }
+
+  .final-title {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(100deg, var(--gold), var(--teal));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .cheat-sheet {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 28px auto;
+    max-width: 600px;
+    text-align: left;
+  }
+
+  .cs-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  .cs-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .cs-key {
+    font-family: 'Space Mono', monospace;
+    color: var(--teal);
+    white-space: nowrap;
+    min-width: 180px;
+  }
+
+  .cs-val { color: var(--muted2); }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  p { line-height: 1.8; margin-bottom: 12px; font-size: 14.5px; }
+  strong { color: var(--gold2); font-weight: 600; }
+  em { color: var(--teal); font-style: normal; }
+  code { font-family: 'Space Mono', monospace; font-size: 12px; background: var(--surface2); padding: 1px 6px; border-radius: 3px; color: var(--sky); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="pre-badge">
+      <span class="badge-pill badge-adv">Advanced</span>
+      <span class="badge-pill badge-v2">Part II</span>
+    </div>
+    <h1>
+      <div class="h1-line1">AI SDK</div>
+      <div class="h1-line2">高阶实战教程</div>
+    </h1>
+    <p class="subtitle">掌握三项进阶能力：用 Embedding 构建语义搜索引擎、用多模态 API 处理图片输入、用 Provider Middleware 实现生产级日志与限速。</p>
+  </header>
+
+  <!-- CHAPTER MAP -->
+  <div class="chapter-map">
+    <div class="ch-card active" onclick="goto(0)">
+      <span class="ch-done-mark">✓</span>
+      <div class="ch-icon">🧮</div>
+      <div class="ch-num">CHAPTER 01</div>
+      <div class="ch-name">Embedding</div>
+      <div class="ch-sub">语义搜索 · 向量数据库</div>
+    </div>
+    <div class="ch-card" onclick="goto(1)">
+      <span class="ch-done-mark">✓</span>
+      <div class="ch-icon">🖼️</div>
+      <div class="ch-num">CHAPTER 02</div>
+      <div class="ch-name">多模态输入</div>
+      <div class="ch-sub">图片 · PDF · 文件</div>
+    </div>
+    <div class="ch-card" onclick="goto(2)">
+      <span class="ch-done-mark">✓</span>
+      <div class="ch-icon">⚙️</div>
+      <div class="ch-num">CHAPTER 03</div>
+      <div class="ch-name">Provider Middleware</div>
+      <div class="ch-sub">日志 · 缓存 · 限速</div>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-row">
+    <div class="prog-dots">
+      <div class="prog-dot active" id="pd0"></div>
+      <div class="prog-dot" id="pd1"></div>
+      <div class="prog-dot" id="pd2"></div>
+    </div>
+    <span class="prog-text" id="prog-text">0 / 3 完成</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!--  SECTION 0 — EMBEDDING                     -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section active" id="s0">
+    <div class="sec-eyebrow">
+      <span class="sec-num">CHAPTER 01</span>
+      <span class="sec-tag tag-gold">Embedding</span>
+    </div>
+    <div class="sec-title">Embedding 与语义搜索</div>
+    <p class="sec-desc">Embedding 把文本转换成一串数字（向量），语义相近的文本向量也相近。这是构建语义搜索、RAG（检索增强生成）的核心技术。</p>
+
+    <div class="callout callout-concept">
+      <span class="callout-icon">🧮</span>
+      <div>
+        <strong style="color:var(--gold)">什么是向量？</strong><br>
+        "猫" 和 "狗" 转成向量后距离很近，"猫" 和 "核武器" 距离很远。<code>embedMany</code> 把文本变成向量，<code>cosineSimilarity</code> 计算两个向量有多相似（-1 到 1，越接近 1 越相似）。
+      </div>
+    </div>
+
+    <!-- Flow diagram -->
+    <div class="diagram">
+      <div style="margin-bottom:8px;color:var(--muted);font-size:10px;letter-spacing:1px;">语义搜索完整流程</div>
+      <div style="line-height:2.5;">
+        <span class="d-box d-box-gold">用户输入文本</span>
+        <span class="d-arrow">──▶</span>
+        <span class="d-box d-box-sky">embed() 生成向量</span>
+        <span class="d-arrow">──▶</span>
+        <span class="d-box d-box-rose">计算 cosineSimilarity</span>
+        <br>
+        <span style="margin-left:20px;color:var(--muted);">↕ 离线阶段</span>
+        <br>
+        <span class="d-box d-box-gold">知识库文档</span>
+        <span class="d-arrow">──▶</span>
+        <span class="d-box d-box-sky">embedMany() 批量向量化</span>
+        <span class="d-arrow">──▶</span>
+        <span class="d-box d-box-teal">存入向量数据库</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">安装依赖</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cmt"># OpenAI 的 text-embedding-3-small 是最常用的 embedding 模型</span>
+<span class="fn">npm</span> install ai @ai-sdk/openai</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">embed() — 单条文本向量化</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { embed } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+
+<span class="kw">const</span> { embedding } <span class="op">=</span> <span class="kw">await</span> <span class="fn">embed</span>({
+  model: openai.<span class="fn">embedding</span>(<span class="str">'text-embedding-3-small'</span>),
+  value: <span class="str">'今天天气真不错'</span>,
+})
+
+console.<span class="fn">log</span>(embedding)
+<span class="cmt">// [0.021, -0.083, 0.412, ...] 长度 1536 的数组</span>
+console.<span class="fn">log</span>(embedding.length) <span class="cmt">// 1536</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">embedMany() — 批量向量化（构建知识库）</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { embedMany, cosineSimilarity } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+
+<span class="cmt">// 知识库文档</span>
+<span class="kw">const</span> docs <span class="op">=</span> [
+  <span class="str">'退款政策：购买后7天内可申请全额退款'</span>,
+  <span class="str">'配送说明：全国包邮，3-5个工作日送达'</span>,
+  <span class="str">'会员权益：黄金会员享受9折优惠'</span>,
+  <span class="str">'售后服务：联系客服 400-000-0000'</span>,
+]
+
+<span class="cmt">// 批量生成向量（一次 API 请求，更高效）</span>
+<span class="kw">const</span> { embeddings } <span class="op">=</span> <span class="kw">await</span> <span class="fn">embedMany</span>({
+  model: openai.<span class="fn">embedding</span>(<span class="str">'text-embedding-3-small'</span>),
+  values: docs,
+})
+
+<span class="cmt">// 将文档与向量配对存储</span>
+<span class="kw">const</span> vectorDB <span class="op">=</span> docs.<span class="fn">map</span>((doc, i) <span class="op">=&gt;</span> ({
+  text: doc,
+  vector: embeddings[i],
+}))
+
+<span class="cmt">// ── 查询阶段 ──</span>
+<span class="kw">const</span> query <span class="op">=</span> <span class="str">'我想退货'</span>
+<span class="kw">const</span> { embedding: queryVec } <span class="op">=</span> <span class="kw">await</span> <span class="fn">embed</span>({
+  model: openai.<span class="fn">embedding</span>(<span class="str">'text-embedding-3-small'</span>),
+  value: query,
+})
+
+<span class="cmt">// 找出最相似的文档</span>
+<span class="kw">const</span> results <span class="op">=</span> vectorDB
+  .<span class="fn">map</span>(item <span class="op">=&gt;</span> ({
+    text: item.text,
+    score: <span class="fn">cosineSimilarity</span>(queryVec, item.vector),
+  }))
+  .<span class="fn">sort</span>((a, b) <span class="op">=&gt;</span> b.score <span class="op">-</span> a.score)
+
+console.<span class="fn">log</span>(results[<span class="num">0</span>])
+<span class="cmt">// { text: '退款政策：购买后7天内...', score: 0.89 }</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">完整 RAG 示例 — 检索增强生成</div></div>
+      <p style="font-size:13px;color:var(--muted2);margin-bottom:4px;">把语义搜索和文本生成结合，让 AI 基于你的知识库回答问题：</p>
+
+      <div class="step-list">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">检索相关文档</div>
+            <div class="step-desc">用用户的问题查询向量数据库，取出最相关的 top-k 文档。</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">构建上下文 Prompt</div>
+            <div class="step-desc">将检索到的文档拼入 system prompt，告诉 AI "基于以下内容回答"。</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">生成回答</div>
+            <div class="step-desc">调用 generateText / streamText，AI 基于检索内容给出准确答案。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">async function</span> <span class="fn">ragQuery</span>(userQuestion: <span class="type">string</span>) {
+  <span class="cmt">// Step 1: 向量化用户问题</span>
+  <span class="kw">const</span> { embedding } <span class="op">=</span> <span class="kw">await</span> <span class="fn">embed</span>({
+    model: openai.<span class="fn">embedding</span>(<span class="str">'text-embedding-3-small'</span>),
+    value: userQuestion,
+  })
+
+  <span class="cmt">// Step 2: 从向量库检索 top 3 相关文档</span>
+  <span class="kw">const</span> topDocs <span class="op">=</span> vectorDB
+    .<span class="fn">map</span>(item <span class="op">=&gt;</span> ({
+      ...item,
+      score: <span class="fn">cosineSimilarity</span>(embedding, item.vector),
+    }))
+    .<span class="fn">sort</span>((a, b) <span class="op">=&gt;</span> b.score <span class="op">-</span> a.score)
+    .<span class="fn">slice</span>(<span class="num">0</span>, <span class="num">3</span>)
+    .<span class="fn">filter</span>(d <span class="op">=&gt;</span> d.score <span class="op">&gt;</span> <span class="num">0.5</span>) <span class="cmt">// 过滤相关性太低的</span>
+
+  <span class="cmt">// Step 3: 构建带上下文的 prompt</span>
+  <span class="kw">const</span> context <span class="op">=</span> topDocs.<span class="fn">map</span>(d <span class="op">=&gt;</span> d.text).<span class="fn">join</span>(<span class="str">'\n'</span>)
+
+  <span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+    model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+    system: <span class="str">`你是客服助手。请基于以下知识库内容回答问题，
+如果知识库中没有相关信息，请说"这个问题我需要转人工处理"。
+
+知识库：
+</span>${context}<span class="str">`</span>,
+    prompt: userQuestion,
+  })
+
+  <span class="kw">return</span> { answer: text, sources: topDocs }
+}
+
+<span class="cmt">// 使用</span>
+<span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> <span class="fn">ragQuery</span>(<span class="str">'我能退货吗？'</span>)
+console.<span class="fn">log</span>(result.answer)
+<span class="cmt">// "根据退款政策，购买后7天内可申请全额退款..."</span></pre>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">💡</span>
+      <div>
+        <strong style="color:var(--teal)">生产环境建议</strong>：上面用内存数组模拟了向量库。实际生产中应用真正的向量数据库，推荐 <strong style="color:var(--teal)">pgvector</strong>（PostgreSQL 插件）、<strong style="color:var(--teal)">Pinecone</strong>（托管服务）或 <strong style="color:var(--teal)">Qdrant</strong>（自托管）。
+      </div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-header">🧠 QUIZ</div>
+      <div class="quiz-q"><code>cosineSimilarity</code> 返回 <code>0.95</code> 说明什么？</div>
+      <div class="quiz-opts">
+        <button class="quiz-opt" onclick="answer(this,false,'余弦相似度范围是 -1 到 1，0.95 不代表 95%，而是接近最大值 1，说明非常相似。')">A. 两段文本有 95% 的单词相同</button>
+        <button class="quiz-opt" onclick="answer(this,true,'✅ 完全正确！余弦相似度越接近 1 越相似，0.95 表示两段文本语义非常接近，即使用词不完全一样。')">B. 两段文本语义非常相近（接近最大值 1）</button>
+        <button class="quiz-opt" onclick="answer(this,false,'余弦相似度与文本长度无关，它只度量语义方向。')">C. 两段文本长度相差 5%</button>
+      </div>
+      <div class="quiz-fb"></div>
+    </div>
+
+    <div class="nav-row">
+      <span></span>
+      <button class="btn-next" onclick="next()">下一章：多模态输入 →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!--  SECTION 1 — MULTIMODAL                    -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section" id="s1">
+    <div class="sec-eyebrow">
+      <span class="sec-num">CHAPTER 02</span>
+      <span class="sec-tag tag-sky">多模态</span>
+    </div>
+    <div class="sec-title">多模态输入</div>
+    <p class="sec-desc">现代 AI 模型不只能处理文字，还能理解图片、PDF、文件。AI SDK 用统一的 <code>messages</code> 格式处理所有类型的输入内容。</p>
+
+    <div class="callout callout-sky">
+      <span class="callout-icon">🖼️</span>
+      <div>
+        AI SDK 的多模态输入通过在 <code>messages</code> 的 <code>content</code> 字段传入数组来实现。每个元素是一个 <strong style="color:var(--sky)">content part</strong>，类型可以是 <code>text</code>、<code>image</code> 或 <code>file</code>。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">图片输入 — URL 方式</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { generateText } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+
+<span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o'</span>), <span class="cmt">// 需要支持视觉的模型</span>
+  messages: [
+    {
+      role: <span class="str">'user'</span>,
+      content: [
+        {
+          type: <span class="str">'image'</span>,
+          image: <span class="kw">new</span> <span class="fn">URL</span>(<span class="str">'https://example.com/chart.png'</span>),
+        },
+        {
+          type: <span class="str">'text'</span>,
+          text: <span class="str">'这张图表说明了什么趋势？用中文回答。'</span>,
+        },
+      ],
+    },
+  ],
+})
+
+console.<span class="fn">log</span>(text)</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">图片输入 — Base64 方式（本地文件）</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { readFileSync } <span class="kw">from</span> <span class="str">'fs'</span>
+
+<span class="cmt">// 读取本地图片文件</span>
+<span class="kw">const</span> imageBuffer <span class="op">=</span> <span class="fn">readFileSync</span>(<span class="str">'./screenshot.png'</span>)
+
+<span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o'</span>),
+  messages: [
+    {
+      role: <span class="str">'user'</span>,
+      content: [
+        {
+          type: <span class="str">'image'</span>,
+          image: imageBuffer,      <span class="cmt">// Buffer 直接传入</span>
+          mimeType: <span class="str">'image/png'</span>, <span class="cmt">// 可选，帮助模型识别格式</span>
+        },
+        {
+          type: <span class="str">'text'</span>,
+          text: <span class="str">'截图里有什么错误信息？'</span>,
+        },
+      ],
+    },
+  ],
+})</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">多图片输入 — 同时分析多张图</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o'</span>),
+  messages: [
+    {
+      role: <span class="str">'user'</span>,
+      content: [
+        { type: <span class="str">'text'</span>, text: <span class="str">'比较这两张产品图，哪个设计更好？'</span> },
+        { type: <span class="str">'image'</span>, image: <span class="kw">new</span> <span class="fn">URL</span>(<span class="str">'https://example.com/design-a.jpg'</span>) },
+        { type: <span class="str">'image'</span>, image: <span class="kw">new</span> <span class="fn">URL</span>(<span class="str">'https://example.com/design-b.jpg'</span>) },
+      ],
+    },
+  ],
+})</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">PDF 文件输入（Anthropic Claude 支持）</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { anthropic } <span class="kw">from</span> <span class="str">'@ai-sdk/anthropic'</span>
+<span class="kw">import</span> { readFileSync } <span class="kw">from</span> <span class="str">'fs'</span>
+
+<span class="kw">const</span> pdfBuffer <span class="op">=</span> <span class="fn">readFileSync</span>(<span class="str">'./contract.pdf'</span>)
+
+<span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">anthropic</span>(<span class="str">'claude-3-5-sonnet-20241022'</span>),
+  messages: [
+    {
+      role: <span class="str">'user'</span>,
+      content: [
+        {
+          type: <span class="str">'file'</span>,
+          data: pdfBuffer,
+          mimeType: <span class="str">'application/pdf'</span>,
+        },
+        {
+          type: <span class="str">'text'</span>,
+          text: <span class="str">'总结这份合同的关键条款，特别是违约责任部分'</span>,
+        },
+      ],
+    },
+  ],
+})</pre>
+      </div>
+      <div class="callout callout-warn" style="margin-top:12px;">
+        <span class="callout-icon">⚠️</span>
+        <div>PDF 支持因模型而异。Claude 3.5+ 原生支持 PDF，GPT-4o 需要先提取文字再传入。建议处理文档时优先选 Claude。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">实战：Next.js 图片上传分析 API</div></div>
+
+      <div class="file-tag">app/api/analyze-image/route.ts</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { generateText } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+
+<span class="kw">export async function</span> <span class="fn">POST</span>(req: Request) {
+  <span class="kw">const</span> formData <span class="op">=</span> <span class="kw">await</span> req.<span class="fn">formData</span>()
+  <span class="kw">const</span> file <span class="op">=</span> formData.<span class="fn">get</span>(<span class="str">'image'</span>) <span class="kw">as</span> File
+  <span class="kw">const</span> prompt <span class="op">=</span> formData.<span class="fn">get</span>(<span class="str">'prompt'</span>) <span class="kw">as</span> <span class="type">string</span>
+
+  <span class="kw">const</span> buffer <span class="op">=</span> <span class="fn">Buffer</span>.<span class="fn">from</span>(<span class="kw">await</span> file.<span class="fn">arrayBuffer</span>())
+
+  <span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+    model: <span class="fn">openai</span>(<span class="str">'gpt-4o'</span>),
+    messages: [{
+      role: <span class="str">'user'</span>,
+      content: [
+        { type: <span class="str">'image'</span>, image: buffer, mimeType: file.type },
+        { type: <span class="str">'text'</span>, text: prompt <span class="op">||</span> <span class="str">'描述这张图片'</span> },
+      ],
+    }],
+  })
+
+  <span class="kw">return</span> Response.<span class="fn">json</span>({ result: text })
+}</pre>
+      </div>
+
+      <div class="file-tag">app/page.tsx (前端)</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="str">'use client'</span>
+<span class="kw">import</span> { useState } <span class="kw">from</span> <span class="str">'react'</span>
+
+<span class="kw">export default function</span> <span class="fn">Page</span>() {
+  <span class="kw">const</span> [result, setResult] <span class="op">=</span> <span class="fn">useState</span>(<span class="str">''</span>)
+
+  <span class="kw">const</span> <span class="fn">handleUpload</span> <span class="op">=</span> <span class="kw">async</span> (e: React.ChangeEvent&lt;HTMLInputElement&gt;) <span class="op">=&gt;</span> {
+    <span class="kw">const</span> file <span class="op">=</span> e.target.files?.[<span class="num">0</span>]
+    <span class="kw">if</span> (!file) <span class="kw">return</span>
+
+    <span class="kw">const</span> fd <span class="op">=</span> <span class="kw">new</span> <span class="fn">FormData</span>()
+    fd.<span class="fn">append</span>(<span class="str">'image'</span>, file)
+    fd.<span class="fn">append</span>(<span class="str">'prompt'</span>, <span class="str">'详细描述这张图片的内容'</span>)
+
+    <span class="kw">const</span> res <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'/api/analyze-image'</span>, {
+      method: <span class="str">'POST'</span>, body: fd,
+    })
+    <span class="kw">const</span> data <span class="op">=</span> <span class="kw">await</span> res.<span class="fn">json</span>()
+    <span class="fn">setResult</span>(data.result)
+  }
+
+  <span class="kw">return</span> (
+    &lt;<span class="obj">div</span>&gt;
+      &lt;<span class="obj">input</span> type=<span class="str">"file"</span> accept=<span class="str">"image/*"</span> onChange={handleUpload} /&gt;
+      {result <span class="op">&amp;&amp;</span> &lt;<span class="obj">p</span>&gt;{result}&lt;/<span class="obj">p</span>&gt;}
+    &lt;/<span class="obj">div</span>&gt;
+  )
+}</pre>
+      </div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-header">🧠 QUIZ</div>
+      <div class="quiz-q">在 AI SDK 的 <code>messages</code> 中传入图片，<code>content</code> 字段应该是什么格式？</div>
+      <div class="quiz-opts">
+        <button class="quiz-opt" onclick="answer(this,false,'content 是字符串时只能传文本，无法传图片。')">A. 字符串，比如 <code>&quot;describe this image: [base64]&quot;</code></button>
+        <button class="quiz-opt" onclick="answer(this,true,'✅ 正确！content 是 content part 数组，每个元素有 type 字段，可以是 text / image / file。')">B. 数组，每个元素是带 <code>type</code> 字段的对象</button>
+        <button class="quiz-opt" onclick="answer(this,false,'没有独立的 images 字段，所有内容都在 content 数组里。')">C. 对象，包含 <code>text</code> 和 <code>images</code> 两个字段</button>
+      </div>
+      <div class="quiz-fb"></div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="prev()">← 上一章</button>
+      <button class="btn-next" onclick="next()">下一章：Middleware →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!--  SECTION 2 — MIDDLEWARE                    -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section" id="s2">
+    <div class="sec-eyebrow">
+      <span class="sec-num">CHAPTER 03</span>
+      <span class="sec-tag tag-teal">Middleware</span>
+    </div>
+    <div class="sec-title">Provider Middleware</div>
+    <p class="sec-desc">生产环境中你需要日志、缓存、限速、成本控制。Provider Middleware 让你在不改变业务代码的情况下，给任意模型调用加上这些能力。</p>
+
+    <div class="callout callout-concept">
+      <span class="callout-icon">⚙️</span>
+      <div>
+        <strong style="color:var(--gold)">Middleware 原理</strong>：<code>wrapLanguageModel()</code> 用装饰器模式包装一个模型对象，拦截每次调用的参数（<code>transformParams</code>）和结果（<code>wrapGenerate</code> / <code>wrapStream</code>），在不侵入业务代码的前提下注入横切逻辑。
+      </div>
+    </div>
+
+    <div class="diagram">
+      <div style="margin-bottom:8px;color:var(--muted);font-size:10px;letter-spacing:1px;">Middleware 拦截流程</div>
+      <div style="line-height:3;">
+        <span class="d-box d-box-gold">generateText()</span>
+        <span class="d-arrow">──▶</span>
+        <span class="d-box d-box-rose">middleware.wrapGenerate</span>
+        <span class="d-arrow">──▶</span>
+        <span class="d-box d-box-sky">transformParams</span>
+        <span class="d-arrow">──▶</span>
+        <span class="d-box d-box-teal">model API</span>
+        <br>
+        <span style="margin-left:20px;"></span>
+        <span class="d-arrow" style="visibility:hidden;">──▶</span>
+        <span class="d-box d-box-rose" style="opacity:0.6;">处理结果 / 记录日志</span>
+        <span class="d-arrow">◀──</span>
+        <span class="d-box d-box-teal" style="opacity:0.6;">返回结果</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">基础结构 — wrapLanguageModel</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { wrapLanguageModel } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+
+<span class="kw">const</span> myModel <span class="op">=</span> <span class="fn">wrapLanguageModel</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  middleware: {
+    <span class="cmt">// 拦截并修改请求参数</span>
+    <span class="fn">transformParams</span>: <span class="kw">async</span> ({ params }) <span class="op">=&gt;</span> {
+      <span class="kw">return</span> params <span class="cmt">// 直接返回不修改</span>
+    },
+
+    <span class="cmt">// 拦截非流式调用（generateText）</span>
+    <span class="fn">wrapGenerate</span>: <span class="kw">async</span> ({ doGenerate, params }) <span class="op">=&gt;</span> {
+      <span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> <span class="fn">doGenerate</span>()
+      <span class="kw">return</span> result
+    },
+
+    <span class="cmt">// 拦截流式调用（streamText）</span>
+    <span class="fn">wrapStream</span>: <span class="kw">async</span> ({ doStream, params }) <span class="op">=&gt;</span> {
+      <span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> <span class="fn">doStream</span>()
+      <span class="kw">return</span> result
+    },
+  },
+})</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">实战 1 — 日志 Middleware（记录 token 用量）</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">function</span> <span class="fn">createLoggingMiddleware</span>(label: <span class="type">string</span>) {
+  <span class="kw">return</span> {
+    <span class="fn">wrapGenerate</span>: <span class="kw">async</span> ({ doGenerate, params }) <span class="op">=&gt;</span> {
+      <span class="kw">const</span> start <span class="op">=</span> Date.<span class="fn">now</span>()
+
+      <span class="kw">try</span> {
+        <span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> <span class="fn">doGenerate</span>()
+        <span class="kw">const</span> ms <span class="op">=</span> Date.<span class="fn">now</span>() <span class="op">-</span> start
+
+        console.<span class="fn">log</span>({
+          label,
+          model: params.model,
+          promptTokens: result.usage?.promptTokens,
+          completionTokens: result.usage?.completionTokens,
+          latencyMs: ms,
+          finishReason: result.finishReason,
+        })
+
+        <span class="kw">return</span> result
+      } <span class="kw">catch</span> (err) {
+        console.<span class="fn">error</span>({ label, error: err, latencyMs: Date.<span class="fn">now</span>() <span class="op">-</span> start })
+        <span class="kw">throw</span> err
+      }
+    },
+  }
+}
+
+<span class="cmt">// 使用</span>
+<span class="kw">const</span> loggedModel <span class="op">=</span> <span class="fn">wrapLanguageModel</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  middleware: <span class="fn">createLoggingMiddleware</span>(<span class="str">'chat-api'</span>),
+})
+
+<span class="cmt">// 每次调用自动打印：</span>
+<span class="cmt">// { label: 'chat-api', promptTokens: 45, completionTokens: 123, latencyMs: 892 }</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">实战 2 — 缓存 Middleware（相同请求不重复调用）</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { createHash } <span class="kw">from</span> <span class="str">'crypto'</span>
+
+<span class="cmt">// 简单内存缓存（生产环境可换成 Redis）</span>
+<span class="kw">const</span> cache <span class="op">=</span> <span class="kw">new</span> <span class="fn">Map</span>&lt;<span class="type">string</span>, <span class="type">any</span>&gt;()
+
+<span class="kw">const</span> cachingMiddleware <span class="op">=</span> {
+  <span class="fn">wrapGenerate</span>: <span class="kw">async</span> ({ doGenerate, params }) <span class="op">=&gt;</span> {
+    <span class="cmt">// 用请求参数生成缓存 key</span>
+    <span class="kw">const</span> key <span class="op">=</span> createHash(<span class="str">'sha256'</span>)
+      .<span class="fn">update</span>(JSON.<span class="fn">stringify</span>(params))
+      .<span class="fn">digest</span>(<span class="str">'hex'</span>)
+
+    <span class="kw">if</span> (cache.<span class="fn">has</span>(key)) {
+      console.<span class="fn">log</span>(<span class="str">'[cache HIT]'</span>, key.<span class="fn">slice</span>(<span class="num">0</span>, <span class="num">8</span>))
+      <span class="kw">return</span> cache.<span class="fn">get</span>(key)!
+    }
+
+    console.<span class="fn">log</span>(<span class="str">'[cache MISS]'</span>, key.<span class="fn">slice</span>(<span class="num">0</span>, <span class="num">8</span>))
+    <span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> <span class="fn">doGenerate</span>()
+    cache.<span class="fn">set</span>(key, result)
+    <span class="kw">return</span> result
+  },
+}
+
+<span class="kw">const</span> cachedModel <span class="op">=</span> <span class="fn">wrapLanguageModel</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  middleware: cachingMiddleware,
+})
+
+<span class="cmt">// 第一次调用：发 API 请求</span>
+<span class="kw">await</span> <span class="fn">generateText</span>({ model: cachedModel, prompt: <span class="str">'天空是什么颜色'</span> })
+<span class="cmt">// 第二次完全相同的调用：直接返回缓存，0 延迟，0 费用！</span>
+<span class="kw">await</span> <span class="fn">generateText</span>({ model: cachedModel, prompt: <span class="str">'天空是什么颜色'</span> })</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">实战 3 — 限速 Middleware（防止 API 超限）</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">function</span> <span class="fn">createRateLimiter</span>(maxRPM: <span class="type">number</span>) {
+  <span class="kw">const</span> queue: <span class="type">number</span>[] <span class="op">=</span> [] <span class="cmt">// 请求时间戳队列</span>
+
+  <span class="kw">return</span> {
+    <span class="fn">wrapGenerate</span>: <span class="kw">async</span> ({ doGenerate }) <span class="op">=&gt;</span> {
+      <span class="kw">const</span> now <span class="op">=</span> Date.<span class="fn">now</span>()
+      <span class="kw">const</span> windowStart <span class="op">=</span> now <span class="op">-</span> <span class="num">60_000</span> <span class="cmt">// 1 分钟窗口</span>
+
+      <span class="cmt">// 清理过期的请求记录</span>
+      <span class="kw">while</span> (queue.length <span class="op">&amp;&amp;</span> queue[<span class="num">0</span>] <span class="op">&lt;</span> windowStart) queue.<span class="fn">shift</span>()
+
+      <span class="kw">if</span> (queue.length <span class="op">&gt;=</span> maxRPM) {
+        <span class="kw">const</span> waitMs <span class="op">=</span> queue[<span class="num">0</span>] <span class="op">+</span> <span class="num">60_000</span> <span class="op">-</span> now
+        console.<span class="fn">log</span>(<span class="str">`[rate limit] 等待 </span>${waitMs}<span class="str">ms`</span>)
+        <span class="kw">await</span> <span class="kw">new</span> <span class="fn">Promise</span>(r <span class="op">=&gt;</span> <span class="fn">setTimeout</span>(r, waitMs))
+      }
+
+      queue.<span class="fn">push</span>(Date.<span class="fn">now</span>())
+      <span class="kw">return</span> <span class="fn">doGenerate</span>()
+    },
+  }
+}
+
+<span class="kw">const</span> rateLimitedModel <span class="op">=</span> <span class="fn">wrapLanguageModel</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  middleware: <span class="fn">createRateLimiter</span>(<span class="num">50</span>), <span class="cmt">// 最多 50 RPM</span>
+})</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">实战 4 — 叠加多个 Middleware</div></div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">import</span> { wrapLanguageModel } <span class="kw">from</span> <span class="str">'ai'</span>
+
+<span class="cmt">// 多个 middleware 可以嵌套叠加</span>
+<span class="kw">const</span> productionModel <span class="op">=</span> <span class="fn">wrapLanguageModel</span>({
+  model: <span class="fn">wrapLanguageModel</span>({
+    model: <span class="fn">wrapLanguageModel</span>({
+      model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+      middleware: cachingMiddleware,        <span class="cmt">// 最内层：先查缓存</span>
+    }),
+    middleware: <span class="fn">createRateLimiter</span>(<span class="num">50</span>),    <span class="cmt">// 中间层：限速</span>
+  }),
+  middleware: <span class="fn">createLoggingMiddleware</span>(<span class="str">'prod'</span>), <span class="cmt">// 最外层：记录日志</span>
+})
+
+<span class="cmt">// 执行顺序：日志进入 → 限速检查 → 缓存查找 → API 调用 → 日志输出</span>
+<span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: productionModel,
+  prompt: <span class="str">'你好'</span>,
+})</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-label">实战 5 — transformParams：注入系统提示词</div></div>
+      <p style="font-size:13px;color:var(--muted2);margin-bottom:8px;">在所有请求里强制注入 system prompt，不需要每次手写：</p>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">const</span> systemInjector <span class="op">=</span> {
+  <span class="fn">transformParams</span>: <span class="kw">async</span> ({ params }) <span class="op">=&gt;</span> ({
+    ...params,
+    prompt: {
+      ...params.prompt,
+      <span class="cmt">// 在现有 system 前面插入公司级别的约束</span>
+      system: <span class="str">`你是 ACME 公司的 AI 助手。
+回答要专业、简洁，不要提及竞争对手。
+用户语言：中文。
+
+</span>${params.prompt.system <span class="op">||</span> <span class="str">''</span>}<span class="str">`</span>,
+    },
+  }),
+}
+
+<span class="kw">const</span> brandedModel <span class="op">=</span> <span class="fn">wrapLanguageModel</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+  middleware: systemInjector,
+})
+
+<span class="cmt">// 调用时不需要写 system，自动注入</span>
+<span class="kw">const</span> { text } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: brandedModel,
+  prompt: <span class="str">'介绍一下你自己'</span>,
+})</pre>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">💡</span>
+      <div>
+        <strong style="color:var(--teal)">最佳实践</strong>：把 <code>productionModel</code> 定义在单独的 <code>lib/ai.ts</code> 文件中，全项目共用这一个实例。这样所有调用都自动享有日志、缓存、限速，而业务代码完全不需要感知。
+      </div>
+    </div>
+
+    <div class="quiz">
+      <div class="quiz-header">🧠 QUIZ</div>
+      <div class="quiz-q">你想给模型加上 <strong>缓存</strong> 和 <strong>日志</strong> 两个功能，应该如何使用 Middleware？</div>
+      <div class="quiz-opts">
+        <button class="quiz-opt" onclick="answer(this,false,'每次调用都要手动传 middleware 参数会很繁琐，而且容易遗漏。')">A. 每次调用 generateText 时传入 middleware 参数</button>
+        <button class="quiz-opt" onclick="answer(this,false,'wrapLanguageModel 每次只接受一个 middleware 对象，但可以嵌套两次。')">B. 一次 wrapLanguageModel 同时传入两个 middleware</button>
+        <button class="quiz-opt" onclick="answer(this,true,'✅ 正确！嵌套两层 wrapLanguageModel，分别传入缓存和日志 middleware，就能同时拥有两个能力。')">C. 嵌套两次 wrapLanguageModel，各自传入一个 middleware</button>
+      </div>
+      <div class="quiz-fb"></div>
+    </div>
+
+    <!-- FINAL -->
+    <div class="final">
+      <div class="final-glow">🎓</div>
+      <div class="final-title">高阶教程完成！</div>
+      <p style="color:var(--muted2);max-width:500px;margin:0 auto 28px;font-size:14px;line-height:1.8;">
+        你现在掌握了构建生产级 AI 应用的核心技能。把这三项技术组合起来，可以构建出高效、稳定、可观测的企业级 AI 系统。
+      </p>
+
+      <div class="cheat-sheet">
+        <div class="cs-title">📋 速查表</div>
+        <div class="cs-row">
+          <span class="cs-key">embed()</span>
+          <span class="cs-val">单条文本 → 向量</span>
+        </div>
+        <div class="cs-row">
+          <span class="cs-key">embedMany()</span>
+          <span class="cs-val">批量文本 → 向量数组</span>
+        </div>
+        <div class="cs-row">
+          <span class="cs-key">cosineSimilarity()</span>
+          <span class="cs-val">计算两个向量的语义相似度</span>
+        </div>
+        <hr>
+        <div class="cs-row">
+          <span class="cs-key">content: [{type:'image'}]</span>
+          <span class="cs-val">图片输入（URL 或 Buffer）</span>
+        </div>
+        <div class="cs-row">
+          <span class="cs-key">content: [{type:'file'}]</span>
+          <span class="cs-val">文件输入（PDF 等）</span>
+        </div>
+        <hr>
+        <div class="cs-row">
+          <span class="cs-key">wrapLanguageModel()</span>
+          <span class="cs-val">给模型包一层 middleware</span>
+        </div>
+        <div class="cs-row">
+          <span class="cs-key">transformParams</span>
+          <span class="cs-val">拦截并修改请求参数</span>
+        </div>
+        <div class="cs-row">
+          <span class="cs-key">wrapGenerate</span>
+          <span class="cs-val">拦截 generateText 的调用</span>
+        </div>
+        <div class="cs-row">
+          <span class="cs-key">wrapStream</span>
+          <span class="cs-val">拦截 streamText 的调用</span>
+        </div>
+      </div>
+
+      <button class="btn-back" onclick="restart()" style="margin-top:8px;">🔄 重新学习</button>
+    </div>
+
+    <div style="height:40px;"></div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+  let current = 0;
+  const total = 3;
+  const done = new Set();
+
+  function updateUI() {
+    // dots
+    for (let i = 0; i < total; i++) {
+      const d = document.getElementById('pd' + i);
+      d.className = 'prog-dot' + (done.has(i) ? ' done' : '') + (i === current ? ' active' : '');
+    }
+    // chapter cards
+    document.querySelectorAll('.ch-card').forEach((c, i) => {
+      c.classList.toggle('active', i === current);
+      c.classList.toggle('done', done.has(i));
+    });
+    // progress text
+    document.getElementById('prog-text').textContent = done.size + ' / ' + total + ' 完成';
+  }
+
+  function goto(idx) {
+    document.getElementById('s' + current).classList.remove('active');
+    current = idx;
+    document.getElementById('s' + current).classList.add('active');
+    updateUI();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function next() {
+    done.add(current);
+    if (current < total - 1) goto(current + 1);
+    updateUI();
+  }
+
+  function prev() {
+    if (current > 0) goto(current - 1);
+  }
+
+  function restart() {
+    done.clear();
+    goto(0);
+  }
+
+  function answer(btn, correct, feedback) {
+    const quiz = btn.closest('.quiz');
+    quiz.querySelectorAll('.quiz-opt').forEach(o => o.disabled = true);
+    btn.classList.add(correct ? 'correct' : 'wrong');
+    const fb = quiz.querySelector('.quiz-fb');
+    fb.textContent = feedback;
+    fb.className = 'quiz-fb show ' + (correct ? 'ok' : 'ng');
+  }
+
+  function copyCode(btn) {
+    const pre = btn.nextElementSibling;
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+      btn.textContent = 'copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  updateUI();
+</script>
+</body>
+</html>

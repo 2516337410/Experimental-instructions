@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI SDK · Agent 完全手册</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Syne:wght@400;700;800&family=Noto+Sans+SC:wght@300;400;500&display=swap');
+
+:root {
+  --ink: #0a0a0f;
+  --paper: #f0ede6;
+  --paper2: #e8e4db;
+  --paper3: #ddd8ce;
+  --line: #c8c2b6;
+  --line2: #b0a99a;
+  --red: #c0392b;
+  --red2: #e74c3c;
+  --orange: #d35400;
+  --green: #1a6b3c;
+  --blue: #1a3a6b;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Noto Sans SC', sans-serif;
+  --display: 'Syne', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 400;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle paper texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 27px,
+      rgba(0,0,0,0.04) 27px,
+      rgba(0,0,0,0.04) 28px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 0 32px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── HEADER ── */
+header {
+  padding: 64px 0 0;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 0;
+}
+
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.issue-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--line2);
+  letter-spacing: 1px;
+  line-height: 1.8;
+  flex-shrink: 0;
+}
+
+.masthead {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(42px, 7vw, 80px);
+  line-height: 0.92;
+  letter-spacing: -2px;
+  flex: 1;
+}
+
+.masthead-sub {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--red);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* Chapter nav bar — newspaper section tabs */
+.section-tabs {
+  display: flex;
+  border-top: 2px solid var(--ink);
+  margin-top: 0;
+  overflow-x: auto;
+}
+
+.tab {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--paper);
+  border-bottom: 3px solid transparent;
+  line-height: 1.4;
+  color: var(--line2);
+}
+
+.tab:last-child { border-right: none; }
+
+.tab:hover { background: var(--paper2); color: var(--ink); }
+.tab.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-bottom-color: var(--red);
+}
+.tab.done {
+  background: var(--paper2);
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+.tab-num { display: block; font-size: 9px; opacity: 0.6; margin-bottom: 2px; }
+.tab-name { display: block; font-weight: 600; }
+
+/* Progress strip */
+.progress-strip {
+  height: 4px;
+  background: var(--line);
+  margin-bottom: 48px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--red);
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+/* ── SECTIONS ── */
+.section { display: none; animation: newsIn 0.35s ease; }
+.section.active { display: block; }
+
+@keyframes newsIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Newspaper column grid */
+.col-layout {
+  display: grid;
+  gap: 0;
+}
+.col-2 { grid-template-columns: 1fr 1fr; }
+.col-3 { grid-template-columns: 1fr 1fr 1fr; }
+.col-span-2 { grid-column: span 2; }
+
+@media (max-width: 640px) {
+  .col-2, .col-3 { grid-template-columns: 1fr; }
+  .col-span-2 { grid-column: span 1; }
+}
+
+/* Section headline */
+.sec-headline {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(28px, 5vw, 52px);
+  line-height: 1.0;
+  letter-spacing: -1px;
+  margin-bottom: 6px;
+}
+
+.sec-kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--red);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sec-kicker::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--red);
+  max-width: 60px;
+}
+
+.sec-lead {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #444;
+  margin-bottom: 32px;
+  max-width: 680px;
+}
+
+/* ── COLUMN BOXES ── */
+.col-box {
+  border: 1px solid var(--line);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+  background: var(--paper);
+  position: relative;
+}
+
+.col-box-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* Ruled box */
+.ruled {
+  background: var(--paper2);
+  border: none;
+  border-top: 3px double var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+.ruled .col-box-title { color: var(--ink); border-bottom-color: var(--ink); }
+
+/* ── CODE ── */
+.code-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--line2);
+  text-transform: uppercase;
+  margin-top: 14px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+pre {
+  background: var(--ink);
+  color: #c8d0e0;
+  border-radius: 2px;
+  padding: 18px 20px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  overflow: auto;
+  margin-bottom: 12px;
+  position: relative;
+  white-space: pre;
+}
+
+.copy-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.4);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: absolute;
+  top: 10px; right: 10px;
+  letter-spacing: 0.5px;
+}
+.copy-btn:hover { color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.3); }
+.copy-btn.ok { color: #6ddc8b; border-color: #6ddc8b; }
+
+/* Syntax */
+.kw  { color: #ff7eb6; }
+.fn  { color: #78d1ff; }
+.str { color: #bce87a; }
+.cmt { color: #5a6480; font-style: italic; }
+.num { color: #ffb347; }
+.cls { color: #ffdf80; }
+.op  { color: #78d1ff; }
+.typ { color: #ff9d5c; }
+
+/* ── CALLOUTS ── */
+.aside {
+  border-left: 3px solid var(--ink);
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: 13px;
+  line-height: 1.7;
+  background: var(--paper2);
+}
+
+.aside.red { border-left-color: var(--red); }
+.aside.green { border-left-color: var(--green); }
+.aside.orange { border-left-color: var(--orange); }
+
+.aside strong { font-weight: 600; }
+
+/* ── DIAGRAM ── */
+.diagram {
+  background: var(--ink);
+  color: #c8d0e0;
+  padding: 24px;
+  margin: 16px 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 2.2;
+  overflow-x: auto;
+  border-radius: 2px;
+}
+
+.d-node {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 2px;
+  font-size: 11px;
+}
+.d-red   { background: rgba(192,57,43,0.3); border: 1px solid #c0392b; color: #ff8f7e; }
+.d-blue  { background: rgba(26,58,107,0.4); border: 1px solid #3a6bc0; color: #7eb8ff; }
+.d-green { background: rgba(26,107,60,0.3); border: 1px solid #1a6b3c; color: #6ddc8b; }
+.d-amber { background: rgba(211,84,0,0.3);  border: 1px solid #d35400; color: #ffb347; }
+.d-gray  { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #8899bb; }
+.d-arr   { color: #5a6480; margin: 0 6px; }
+
+/* ── QUIZ ── */
+.quiz-box {
+  border: 2px solid var(--ink);
+  padding: 22px 24px;
+  margin: 24px 0;
+  background: var(--paper);
+}
+
+.quiz-header {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.quiz-header::before { content: '◆'; font-size: 8px; }
+
+.quiz-q {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.quiz-opts { display: flex; flex-direction: column; gap: 8px; }
+
+.quiz-opt {
+  background: var(--paper2);
+  border: 1px solid var(--line);
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  color: var(--ink);
+  border-radius: 1px;
+  line-height: 1.5;
+}
+.quiz-opt:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+.quiz-opt.correct { background: #1a6b3c; color: #fff; border-color: #1a6b3c; }
+.quiz-opt.wrong { background: #8b1a1a; color: #fff; border-color: #8b1a1a; }
+
+.quiz-fb {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.65;
+  padding: 10px 14px;
+  display: none;
+  border-left: 3px solid;
+}
+.quiz-fb.show { display: block; }
+.quiz-fb.ok { border-left-color: var(--green); background: rgba(26,107,60,0.08); color: var(--green); }
+.quiz-fb.ng { border-left-color: var(--red); background: rgba(192,57,43,0.08); color: var(--red); }
+
+/* ── NAV ── */
+.nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 0 64px;
+  border-top: 1px solid var(--line);
+  margin-top: 32px;
+}
+
+.btn-next {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-next:hover { background: var(--red); }
+
+.btn-back {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: transparent;
+  color: var(--line2);
+  border: 1px solid var(--line);
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-back:hover { color: var(--ink); border-color: var(--ink); }
+
+/* inline code */
+code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--paper3);
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+}
+
+p { line-height: 1.8; font-size: 14px; margin-bottom: 10px; }
+strong { font-weight: 600; }
+hr { border: none; border-top: 1px solid var(--line); margin: 20px 0; }
+
+/* ── FINAL ── */
+.final-block {
+  border: 3px double var(--ink);
+  padding: 40px;
+  text-align: center;
+  margin: 32px 0;
+}
+
+.final-title {
+  font-family: var(--display);
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+}
+
+.cheat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin: 24px 0;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+@media (max-width: 600px) { .cheat-grid { grid-template-columns: 1fr; } }
+
+.cheat-cell {
+  padding: 14px 16px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.cheat-cell:nth-child(even) { border-right: none; }
+
+.cheat-key {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--red);
+  margin-bottom: 4px;
+}
+
+.cheat-val {
+  font-size: 12px;
+  color: #444;
+  line-height: 1.5;
+}
+
+/* step connector */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 12px 0;
+}
+.step-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.step-item:last-child { border-bottom: none; }
+.step-n {
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+.step-content { flex: 1; }
+.step-t { font-weight: 500; font-size: 13px; margin-bottom: 3px; }
+.step-d { font-size: 12px; color: #666; line-height: 1.6; }
+
+/* pill tags */
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 2px 10px;
+  border: 1px solid;
+}
+.tag-r { border-color: var(--red); color: var(--red); }
+.tag-g { border-color: var(--green); color: var(--green); }
+.tag-b { border-color: var(--blue); color: var(--blue); }
+.tag-o { border-color: var(--orange); color: var(--orange); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<header>
+  <div class="header-top">
+    <div class="issue-meta">
+      AI SDK 手册<br>
+      第三辑 · Agent 篇<br>
+      v6 · 2025年版<br>
+      共 5 章节
+    </div>
+    <div style="flex:1;">
+      <div class="masthead-sub">Vercel AI SDK · Agent 完全手册</div>
+      <div class="masthead">构建<br>自主 AI<br>Agent</div>
+    </div>
+  </div>
+
+  <!-- Tab nav -->
+  <div class="section-tabs" id="tabs">
+    <div class="tab active" onclick="goto(0)">
+      <span class="tab-num">CH 01</span>
+      <span class="tab-name">Agent 原理</span>
+    </div>
+    <div class="tab" onclick="goto(1)">
+      <span class="tab-num">CH 02</span>
+      <span class="tab-name">ToolLoopAgent</span>
+    </div>
+    <div class="tab" onclick="goto(2)">
+      <span class="tab-num">CH 03</span>
+      <span class="tab-name">Loop Control</span>
+    </div>
+    <div class="tab" onclick="goto(3)">
+      <span class="tab-num">CH 04</span>
+      <span class="tab-name">Memory</span>
+    </div>
+    <div class="tab" onclick="goto(4)">
+      <span class="tab-num">CH 05</span>
+      <span class="tab-name">Subagents</span>
+    </div>
+    <div class="tab" onclick="goto(5)">
+      <span class="tab-num">CH 06</span>
+      <span class="tab-name">Multi-Agent</span>
+    </div>
+  </div>
+</header>
+
+<div class="progress-strip"><div class="progress-fill" id="pf"></div></div>
+
+<!-- ═══════════════════════════════ -->
+<!-- S0 — Agent 原理                 -->
+<!-- ═══════════════════════════════ -->
+<div class="section active" id="s0">
+  <div class="sec-kicker">Chapter 01</div>
+  <div class="sec-headline">Agent 是什么？<br>它如何工作？</div>
+  <p class="sec-lead">
+    Agent 不是一次性问答，而是一个持续运行的"思考→行动→观察"循环。理解这个循环，是掌握所有 Agent 技术的基础。
+  </p>
+
+  <!-- The Loop -->
+  <div class="col-box ruled">
+    <div class="col-box-title">Agent 的三要素</div>
+    <div class="diagram">
+      <div style="color:#5a6480;font-size:10px;letter-spacing:1px;margin-bottom:12px;">AGENT = LLM + TOOLS + LOOP</div>
+      <div>
+        <span class="d-node d-red">LLM</span>
+        <span class="d-arr">——</span>
+        <span style="font-size:11px;color:#5a6480;">根据当前上下文决定下一步</span>
+      </div>
+      <div>
+        <span class="d-node d-blue">Tools</span>
+        <span class="d-arr">——</span>
+        <span style="font-size:11px;color:#5a6480;">执行操作（搜索/读文件/调API）</span>
+      </div>
+      <div>
+        <span class="d-node d-green">Loop</span>
+        <span class="d-arr">——</span>
+        <span style="font-size:11px;color:#5a6480;">重复执行直到任务完成</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- The ReAct loop diagram -->
+  <div class="col-box">
+    <div class="col-box-title">ReAct 循环 — Agent 每一步在做什么</div>
+    <div class="diagram">
+<div style="text-align:center;color:#5a6480;font-size:10px;margin-bottom:8px;">── 用户发来任务 ──</div>
+<div style="text-align:center;">
+  <span class="d-node d-amber">用户输入</span>
+</div>
+<div style="text-align:center;color:#5a6480;margin:4px 0;">↓</div>
+<div style="text-align:center;">
+  <span class="d-node d-red">① Reason：LLM 思考</span>
+  <span style="font-size:11px;color:#5a6480;margin-left:10px;">"我需要先查天气再做决策"</span>
+</div>
+<div style="text-align:center;color:#5a6480;margin:4px 0;">↓</div>
+<div style="text-align:center;">
+  <span class="d-node d-blue">② Act：调用工具</span>
+  <span style="font-size:11px;color:#5a6480;margin-left:10px;">getWeather("北京")</span>
+</div>
+<div style="text-align:center;color:#5a6480;margin:4px 0;">↓</div>
+<div style="text-align:center;">
+  <span class="d-node d-green">③ Observe：观察结果</span>
+  <span style="font-size:11px;color:#5a6480;margin-left:10px;">{ temp: 22, condition: "晴" }</span>
+</div>
+<div style="text-align:center;color:#5a6480;margin:4px 0;">↓ 循环回①（直到无需再调工具）</div>
+<div style="text-align:center;">
+  <span class="d-node d-amber">最终回答给用户</span>
+</div>
+    </div>
+  </div>
+
+  <!-- Compare with generateText -->
+  <div class="col-box">
+    <div class="col-box-title">与之前学过的 generateText 的本质区别</div>
+    <div class="col-2 col-layout" style="gap:16px;margin-top:4px;">
+      <div>
+        <p style="font-size:12px;color:#888;margin-bottom:6px;">❌ generateText + maxSteps（手动）</p>
+        <div class="code-label">你之前的写法</div>
+        <pre style="font-size:11.5px;"><span class="cmt">// 每次调用都要重新配置</span>
+<span class="kw">const</span> r <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateText</span>({
+  model: <span class="fn">openai</span>(<span class="str">'gpt-4o'</span>),
+  tools: { ... },
+  maxSteps: <span class="num">5</span>,
+  messages,
+})
+<span class="cmt">// 不可复用，每处都要写</span></pre>
+      </div>
+      <div>
+        <p style="font-size:12px;color:#1a6b3c;margin-bottom:6px;">✅ ToolLoopAgent（推荐）</p>
+        <div class="code-label">现代写法</div>
+        <pre style="font-size:11.5px;"><span class="cmt">// 定义一次，处处复用</span>
+<span class="kw">const</span> agent <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">"openai/gpt-4o"</span>,
+  tools: { ... },
+})
+
+<span class="kw">await</span> agent.<span class="fn">generate</span>({ prompt })
+<span class="kw">await</span> agent.<span class="fn">stream</span>({ prompt })</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="aside red">
+    <strong>重要认知</strong>：AI SDK 6 引入了 <code>ToolLoopAgent</code> 类作为官方推荐的 Agent 构建方式。它本质上是对 <code>generateText</code> 的封装，但提供了可复用性、内置的循环管理和更简洁的 API。
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-header">知识检验</div>
+    <div class="quiz-q">在 ReAct 循环中，"Observe"阶段发生了什么？</div>
+    <div class="quiz-opts">
+      <button class="quiz-opt" onclick="answer(this,false,'这是 Reason 阶段做的事，不是 Observe。')">A. LLM 分析用户输入，决定下一步行动</button>
+      <button class="quiz-opt" onclick="answer(this,true,'✅ 正确！Observe 是把工具执行的返回值（函数结果）送回给 LLM，作为下一次 Reason 的输入。')">B. 把工具执行的结果返回给 LLM，作为下一轮思考的输入</button>
+      <button class="quiz-opt" onclick="answer(this,false,'那是 Act 阶段做的事。')">C. 执行具体的函数调用，比如调用天气 API</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+
+  <div class="nav-row">
+    <span></span>
+    <button class="btn-next" onclick="next()">ToolLoopAgent →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ -->
+<!-- S1 — ToolLoopAgent             -->
+<!-- ═══════════════════════════════ -->
+<div class="section" id="s1">
+  <div class="sec-kicker">Chapter 02</div>
+  <div class="sec-headline">ToolLoopAgent</div>
+  <p class="sec-lead">AI SDK 6 的核心新增类。定义一次，可在整个应用中复用。支持 generate（等待完整结果）和 stream（流式输出）两种模式。</p>
+
+  <div class="col-box">
+    <div class="col-box-title">最小完整示例</div>
+    <div class="code-label">安装</div>
+    <pre><span class="fn">npm</span> install ai @ai-sdk/openai zod</pre>
+
+    <div class="code-label">定义 Agent</div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="kw">import</span> { <span class="cls">ToolLoopAgent</span>, tool, stepCountIs } <span class="kw">from</span> <span class="str">'ai'</span>
+<span class="kw">import</span> { openai } <span class="kw">from</span> <span class="str">'@ai-sdk/openai'</span>
+<span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span>
+
+<span class="cmt">// 注意：AI SDK 6 用 "provider/model" 字符串格式</span>
+<span class="kw">const</span> weatherAgent <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">"openai/gpt-4o-mini"</span>,
+  system: <span class="str">'你是天气助手，用中文回答问题'</span>,
+
+  tools: {
+    <span class="fn">getWeather</span>: <span class="fn">tool</span>({
+      description: <span class="str">'获取城市天气'</span>,
+      inputSchema: z.<span class="fn">object</span>({       <span class="cmt">// ⚠️ v6 用 inputSchema，不是 parameters</span>
+        city: z.<span class="fn">string</span>(),
+      }),
+      execute: <span class="kw">async</span> ({ city }) <span class="op">=&gt;</span> ({
+        city,
+        temp: <span class="num">22</span>,
+        condition: <span class="str">'晴'</span>,
+      }),
+    }),
+  },
+
+  stopWhen: <span class="fn">stepCountIs</span>(<span class="num">10</span>), <span class="cmt">// 最多执行 10 步</span>
+})
+
+<span class="cmt">// 使用：generate（等待完整结果）</span>
+<span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> weatherAgent.<span class="fn">generate</span>({
+  prompt: <span class="str">'北京今天天气怎么样？'</span>,
+})
+console.<span class="fn">log</span>(result.text)
+console.<span class="fn">log</span>(result.steps)   <span class="cmt">// 所有执行步骤</span>
+console.<span class="fn">log</span>(result.usage)   <span class="cmt">// token 用量汇总</span></pre>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">流式模式 — stream()</div>
+    <div class="code-label">在 Next.js API Route 中使用</div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="cmt">// app/api/agent/route.ts</span>
+<span class="kw">export async function</span> <span class="fn">POST</span>(req: Request) {
+  <span class="kw">const</span> { prompt } <span class="op">=</span> <span class="kw">await</span> req.<span class="fn">json</span>()
+
+  <span class="cmt">// stream() 返回 ReadableStream</span>
+  <span class="kw">const</span> result <span class="op">=</span> weatherAgent.<span class="fn">stream</span>({ prompt })
+
+  <span class="kw">return</span> result.<span class="fn">toDataStreamResponse</span>()
+}
+
+<span class="cmt">// 前端仍然用 useChat，与普通 streamText 完全兼容</span></pre>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">result.steps — 查看 Agent 的推理过程</div>
+    <div class="code-label">steps 的结构</div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> agent.<span class="fn">generate</span>({ prompt })
+
+<span class="kw">for</span> (<span class="kw">const</span> step <span class="kw">of</span> result.steps) {
+  console.<span class="fn">log</span>(<span class="str">'步骤类型:'</span>, step.stepType)
+  <span class="cmt">// 'initial' | 'tool-result' | 'continue'</span>
+
+  console.<span class="fn">log</span>(<span class="str">'工具调用:'</span>, step.toolCalls)
+  <span class="cmt">// [{ toolName: 'getWeather', args: { city: '北京' } }]</span>
+
+  console.<span class="fn">log</span>(<span class="str">'工具结果:'</span>, step.toolResults)
+  <span class="cmt">// [{ toolName: 'getWeather', result: { temp: 22 } }]</span>
+
+  console.<span class="fn">log</span>(<span class="str">'本步骤文本:'</span>, step.text)
+  console.<span class="fn">log</span>(<span class="str">'Token用量:'</span>, step.usage)
+}</pre>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">⚠️ v5 → v6 迁移注意：inputSchema 替换 parameters</div>
+    <div class="col-2 col-layout" style="gap:16px;margin-top:4px;">
+      <div>
+        <p style="font-size:12px;color:#888;margin-bottom:6px;">v5 写法（旧）</p>
+        <pre style="font-size:11.5px;"><span class="fn">tool</span>({
+  description: <span class="str">'...'</span>,
+  <span class="cls">parameters</span>: z.<span class="fn">object</span>({
+    city: z.<span class="fn">string</span>(),
+  }),
+  execute: <span class="kw">async</span> (args) <span class="op">=&gt;</span> ...
+})</pre>
+      </div>
+      <div>
+        <p style="font-size:12px;color:#1a6b3c;margin-bottom:6px;">v6 写法（新）</p>
+        <pre style="font-size:11.5px;"><span class="fn">tool</span>({
+  description: <span class="str">'...'</span>,
+  <span class="cls">inputSchema</span>: z.<span class="fn">object</span>({
+    city: z.<span class="fn">string</span>(),
+  }),
+  execute: <span class="kw">async</span> (args) <span class="op">=&gt;</span> ...
+})</pre>
+      </div>
+    </div>
+    <div class="aside orange" style="margin-top:12px;">
+      <strong>迁移工具</strong>：运行 <code>npx @ai-sdk/codemod v6</code> 可以自动把旧写法批量升级到 v6 语法。
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-header">知识检验</div>
+    <div class="quiz-q"><code>ToolLoopAgent</code> 的 <code>stream()</code> 方法与 <code>generate()</code> 的主要区别是什么？</div>
+    <div class="quiz-opts">
+      <button class="quiz-opt" onclick="answer(this,false,'两种方法都支持工具调用，这不是区别。')">A. stream() 不支持工具调用，generate() 才支持</button>
+      <button class="quiz-opt" onclick="answer(this,true,'✅ 正确！stream() 逐 token 流式返回内容（适合实时 UI），generate() 等待所有步骤完成后一次性返回结果（适合后台任务）。')">B. stream() 流式逐步返回，generate() 等待全部完成后返回</button>
+      <button class="quiz-opt" onclick="answer(this,false,'两者底层都是同一个模型和工具配置，执行逻辑相同。')">C. stream() 用更便宜的模型，generate() 用更强的模型</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="prev()">← Agent 原理</button>
+    <button class="btn-next" onclick="next()">Loop Control →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ -->
+<!-- S2 — Loop Control              -->
+<!-- ═══════════════════════════════ -->
+<div class="section" id="s2">
+  <div class="sec-kicker">Chapter 03</div>
+  <div class="sec-headline">Loop Control<br>精确控制循环</div>
+  <p class="sec-lead">Agent 默认会一直循环到认为任务完成为止。Loop Control 让你精确定义"什么时候停"和"每步之前做什么"，避免无限循环和失控执行。</p>
+
+  <div class="col-box ruled">
+    <div class="col-box-title">两个核心 API</div>
+    <div class="tag-row">
+      <span class="tag tag-r">stopWhen</span>
+      <span class="tag tag-b">prepareStep</span>
+    </div>
+    <p><code>stopWhen</code> 定义终止条件，<code>prepareStep</code> 在每步执行前插入逻辑（动态修改工具、注入上下文等）。</p>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">stopWhen — 内置终止条件</div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="kw">import</span> {
+  <span class="cls">ToolLoopAgent</span>,
+  <span class="fn">stepCountIs</span>,       <span class="cmt">// 执行了 N 步就停</span>
+  <span class="fn">hasToolCall</span>,       <span class="cmt">// 调用了某个工具就停</span>
+  <span class="fn">hasNoToolCalls</span>,    <span class="cmt">// 没有调用工具就停（AI 认为完成）</span>
+} <span class="kw">from</span> <span class="str">'ai'</span>
+
+<span class="cmt">// 示例 1：最多跑 5 步（防止失控）</span>
+<span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">'openai/gpt-4o-mini'</span>,
+  tools: { ... },
+  stopWhen: <span class="fn">stepCountIs</span>(<span class="num">5</span>),
+})
+
+<span class="cmt">// 示例 2：没有工具调用时停止（AI 认为任务完成）</span>
+<span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  stopWhen: <span class="fn">hasNoToolCalls</span>(), <span class="cmt">// 这也是默认行为</span>
+})
+
+<span class="cmt">// 示例 3：组合条件 — 满足任一即停</span>
+<span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  stopWhen: [
+    <span class="fn">stepCountIs</span>(<span class="num">10</span>),     <span class="cmt">// 超过 10 步停止</span>
+    <span class="fn">hasToolCall</span>(<span class="str">'done'</span>), <span class="cmt">// 或调用了"完成"工具</span>
+  ],
+})</pre>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">自定义 stopWhen — 根据业务逻辑停止</div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="kw">import</span> { <span class="typ">StopCondition</span> } <span class="kw">from</span> <span class="str">'ai'</span>
+
+<span class="cmt">// stopWhen 接收一个函数：(stepResult) => boolean</span>
+<span class="kw">const</span> agent <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">'openai/gpt-4o-mini'</span>,
+  tools: { getBalance, transfer, notify },
+
+  stopWhen: (stepResult) <span class="op">=&gt;</span> {
+    <span class="cmt">// 如果 AI 调用了"发送通知"工具，说明已完成</span>
+    <span class="kw">return</span> stepResult.toolCalls.<span class="fn">some</span>(
+      c <span class="op">=&gt;</span> c.toolName <span class="op">===</span> <span class="str">'notify'</span>
+    )
+  },
+})</pre>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">prepareStep — 每步执行前插入逻辑</div>
+    <div class="aside green" style="margin-bottom:12px;">
+      <strong>最强大的功能之一</strong>：在每个步骤开始前，你可以动态修改工具集、注入新上下文、切换模型，实现高度灵活的 Agent 行为。
+    </div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="kw">const</span> agent <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">'openai/gpt-4o-mini'</span>,
+  tools: { search, analyze, writeReport },
+
+  <span class="fn">prepareStep</span>: <span class="kw">async</span> ({ stepNumber, messages, toolCalls }) <span class="op">=&gt;</span> {
+    <span class="cmt">// 前 3 步只能用 search 工具</span>
+    <span class="kw">if</span> (stepNumber <span class="op">&lt;</span> <span class="num">3</span>) {
+      <span class="kw">return</span> {
+        toolChoice: { type: <span class="str">'tool'</span>, toolName: <span class="str">'search'</span> },
+      }
+    }
+
+    <span class="cmt">// 如果有足够多的搜索结果，切换到分析模式</span>
+    <span class="kw">const</span> searchCount <span class="op">=</span> toolCalls.<span class="fn">filter</span>(c <span class="op">=&gt;</span> c.toolName <span class="op">===</span> <span class="str">'search'</span>).length
+    <span class="kw">if</span> (searchCount <span class="op">&gt;=</span> <span class="num">3</span>) {
+      <span class="kw">return</span> {
+        <span class="cmt">// 动态注入额外上下文</span>
+        system: <span class="str">'你已收集了足够信息，现在请撰写分析报告'</span>,
+        toolChoice: { type: <span class="str">'tool'</span>, toolName: <span class="str">'writeReport'</span> },
+      }
+    }
+
+    <span class="kw">return</span> {} <span class="cmt">// 不修改，正常执行</span>
+  },
+})</pre>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">onStep 回调 — 实时观察每步结果</div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> agent.<span class="fn">generate</span>({
+  prompt: <span class="str">'分析竞争对手产品'</span>,
+
+  <span class="cmt">// 每步完成后触发（不阻塞执行）</span>
+  <span class="fn">onStep</span>: (step) <span class="op">=&gt;</span> {
+    console.<span class="fn">log</span>(<span class="str">`第 </span>${step.stepNumber}<span class="str"> 步完成`</span>)
+    console.<span class="fn">log</span>(<span class="str">'调用工具:'</span>, step.toolCalls.<span class="fn">map</span>(c <span class="op">=&gt;</span> c.toolName))
+
+    <span class="cmt">// 可以把进度推送给前端</span>
+    progressChannel.<span class="fn">send</span>({
+      step: step.stepNumber,
+      action: step.toolCalls[<span class="num">0</span>]?.toolName,
+    })
+  },
+})</pre>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-header">知识检验</div>
+    <div class="quiz-q">你想实现"前两步强制搜索，之后让 AI 自己决定"，应该用哪个 API？</div>
+    <div class="quiz-opts">
+      <button class="quiz-opt" onclick="answer(this,false,'stopWhen 控制的是循环终止条件，与限制工具使用无关。')">A. stopWhen，根据 stepNumber 返回 true/false</button>
+      <button class="quiz-opt" onclick="answer(this,true,'✅ 正确！prepareStep 在每步开始前执行，可以根据 stepNumber 动态设置 toolChoice，前两步强制选 search，之后返回空对象让 AI 自由决定。')">B. prepareStep，根据 stepNumber 动态设置 toolChoice</button>
+      <button class="quiz-opt" onclick="answer(this,false,'onStep 是执行后的回调，不能影响下一步的行为。')">C. onStep，在回调里修改工具选择</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="prev()">← ToolLoopAgent</button>
+    <button class="btn-next" onclick="next()">Memory →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ -->
+<!-- S3 — Memory                    -->
+<!-- ═══════════════════════════════ -->
+<div class="section" id="s3">
+  <div class="sec-kicker">Chapter 04</div>
+  <div class="sec-headline">Memory<br>Agent 的记忆</div>
+  <p class="sec-lead">没有记忆的 Agent 每次都是全新开始。Memory 让 Agent 能记住用户偏好、历史操作、长期知识，是构建个性化 AI 应用的关键。</p>
+
+  <div class="col-box ruled">
+    <div class="col-box-title">记忆的三种形态</div>
+    <div class="steps">
+      <div class="step-item">
+        <div class="step-n">1</div>
+        <div class="step-content">
+          <div class="step-t">短期记忆（In-Context Memory）</div>
+          <div class="step-d">当前对话的 messages 数组。随对话结束消失。AI SDK 自动管理。</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-n">2</div>
+        <div class="step-content">
+          <div class="step-t">外部记忆（External Memory）</div>
+          <div class="step-d">存进数据库（Postgres/Redis）。跨对话持久化。需要你自己实现存取逻辑。</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-n">3</div>
+        <div class="step-content">
+          <div class="step-t">语义记忆（Semantic / RAG）</div>
+          <div class="step-d">把历史内容向量化存储，按语义检索相关片段注入上下文。即第二篇教程的 Embedding 技术。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">模式 1：持久化对话历史（跨会话短期记忆）</div>
+    <p style="font-size:13px;color:#666;margin-bottom:8px;">核心思路：每次对话前从 DB 加载历史，对话结束后存回 DB。</p>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="cmt">// lib/memory.ts</span>
+<span class="kw">import</span> { db } <span class="kw">from</span> <span class="str">'./db'</span> <span class="cmt">// 你的数据库客户端</span>
+
+<span class="kw">export async function</span> <span class="fn">loadHistory</span>(userId: <span class="typ">string</span>) {
+  <span class="kw">const</span> rows <span class="op">=</span> <span class="kw">await</span> db.query(
+    <span class="str">`SELECT role, content FROM messages
+     WHERE user_id = $1
+     ORDER BY created_at DESC
+     LIMIT 20`</span>,
+    [userId]
+  )
+  <span class="kw">return</span> rows.<span class="fn">reverse</span>() <span class="cmt">// 按时间正序</span>
+}
+
+<span class="kw">export async function</span> <span class="fn">saveMessages</span>(
+  userId: <span class="typ">string</span>,
+  messages: <span class="typ">CoreMessage</span>[]
+) {
+  <span class="kw">await</span> db.query(
+    <span class="str">`INSERT INTO messages (user_id, role, content)
+     VALUES ($1, $2, $3)`</span>,
+    messages.<span class="fn">map</span>(m <span class="op">=&gt;</span> [userId, m.role, m.content])
+  )
+}</pre>
+
+    <div class="code-label">在 Agent 中使用</div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="cmt">// app/api/chat/route.ts</span>
+<span class="kw">export async function</span> <span class="fn">POST</span>(req: Request) {
+  <span class="kw">const</span> { userId, message } <span class="op">=</span> <span class="kw">await</span> req.<span class="fn">json</span>()
+
+  <span class="cmt">// 1. 加载历史对话</span>
+  <span class="kw">const</span> history <span class="op">=</span> <span class="kw">await</span> <span class="fn">loadHistory</span>(userId)
+
+  <span class="cmt">// 2. 运行 Agent（带历史上下文）</span>
+  <span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> myAgent.<span class="fn">generate</span>({
+    messages: [
+      ...history,                           <span class="cmt">// 历史消息</span>
+      { role: <span class="str">'user'</span>, content: message },  <span class="cmt">// 新消息</span>
+    ],
+  })
+
+  <span class="cmt">// 3. 存储新消息和 AI 回复</span>
+  <span class="kw">await</span> <span class="fn">saveMessages</span>(userId, [
+    { role: <span class="str">'user'</span>, content: message },
+    { role: <span class="str">'assistant'</span>, content: result.text },
+  ])
+
+  <span class="kw">return</span> Response.<span class="fn">json</span>({ reply: result.text })
+}</pre>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">模式 2：用户画像记忆（长期个性化）</div>
+    <p style="font-size:13px;color:#666;margin-bottom:8px;">让 Agent 把从对话中提取的用户偏好持久化，下次对话时注入 system prompt。</p>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="cmt">// 每次对话结束后：提取并存储用户信息</span>
+<span class="kw">async function</span> <span class="fn">updateUserProfile</span>(
+  userId: <span class="typ">string</span>,
+  conversation: <span class="typ">CoreMessage</span>[]
+) {
+  <span class="cmt">// 用 generateObject 从对话中提取用户偏好</span>
+  <span class="kw">const</span> { object: profile } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateObject</span>({
+    model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+    schema: z.<span class="fn">object</span>({
+      name: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+      preferredLanguage: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+      interests: z.<span class="fn">array</span>(z.<span class="fn">string</span>()),
+      expertise: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+    }),
+    system: <span class="str">'从对话中提取用户信息，只提取明确提及的内容'</span>,
+    messages: conversation,
+  })
+
+  <span class="kw">await</span> db.<span class="fn">upsert</span>(<span class="str">'user_profiles'</span>, { userId, ...profile })
+}
+
+<span class="cmt">// 下次对话时：把画像注入 system</span>
+<span class="kw">async function</span> <span class="fn">buildSystemWithProfile</span>(userId: <span class="typ">string</span>) {
+  <span class="kw">const</span> profile <span class="op">=</span> <span class="kw">await</span> db.<span class="fn">find</span>(<span class="str">'user_profiles'</span>, { userId })
+  <span class="kw">if</span> (!profile) <span class="kw">return</span> <span class="str">'你是一个智能助手'</span>
+
+  <span class="kw">return</span> <span class="str">`你是一个智能助手。
+用户信息：
+- 姓名：</span>${profile.name <span class="op">||</span> <span class="str">'未知'</span>}<span class="str">
+- 擅长领域：</span>${profile.expertise <span class="op">||</span> <span class="str">'未知'</span>}<span class="str">
+- 兴趣：</span>${profile.interests.<span class="fn">join</span>(<span class="str">', '</span>)}<span class="str">
+请根据用户背景调整回答的深度和风格。`</span>
+}</pre>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">模式 3：语义记忆 + RAG（最强大）</div>
+    <div class="aside green">
+      <strong>组合使用</strong>：把第二篇教程学的 <code>embed()</code> + 向量数据库，用来存储和检索历史对话中的重要信息片段。
+    </div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="cmt">// 存储记忆：把重要信息向量化存入数据库</span>
+<span class="kw">async function</span> <span class="fn">storeMemory</span>(userId: <span class="typ">string</span>, text: <span class="typ">string</span>) {
+  <span class="kw">const</span> { embedding } <span class="op">=</span> <span class="kw">await</span> <span class="fn">embed</span>({
+    model: openai.<span class="fn">embedding</span>(<span class="str">'text-embedding-3-small'</span>),
+    value: text,
+  })
+  <span class="kw">await</span> vectorDB.<span class="fn">upsert</span>({ userId, text, embedding })
+}
+
+<span class="cmt">// 检索记忆：找出与当前问题最相关的历史记忆</span>
+<span class="kw">async function</span> <span class="fn">retrieveMemory</span>(userId: <span class="typ">string</span>, query: <span class="typ">string</span>) {
+  <span class="kw">const</span> { embedding } <span class="op">=</span> <span class="kw">await</span> <span class="fn">embed</span>({
+    model: openai.<span class="fn">embedding</span>(<span class="str">'text-embedding-3-small'</span>),
+    value: query,
+  })
+  <span class="kw">return</span> vectorDB.<span class="fn">query</span>({ userId, embedding, topK: <span class="num">5</span> })
+}
+
+<span class="cmt">// 使用：构建带相关记忆的 Agent 调用</span>
+<span class="kw">const</span> memories <span class="op">=</span> <span class="kw">await</span> <span class="fn">retrieveMemory</span>(userId, userMessage)
+<span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> myAgent.<span class="fn">generate</span>({
+  system: <span class="str">`你是智能助手。以下是与此次对话相关的历史记忆：
+</span>${memories.<span class="fn">map</span>(m <span class="op">=&gt;</span> <span class="str">`- </span>${m.text}<span class="str">`</span>).<span class="fn">join</span>(<span class="str">'\n'</span>)}<span class="str">`,</span>
+  prompt: userMessage,
+})</pre>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-header">知识检验</div>
+    <div class="quiz-q">用户上周告诉 Agent "我不喜欢看长篇文章"。下周新对话开始时，Agent 如何知道这个偏好？</div>
+    <div class="quiz-opts">
+      <button class="quiz-opt" onclick="answer(this,false,'短期记忆（messages 数组）在对话结束后就消失了，无法跨会话保留。')">A. 靠短期记忆，messages 数组自动保存了历史</button>
+      <button class="quiz-opt" onclick="answer(this,true,'✅ 正确！需要把用户偏好存入数据库（外部记忆），下次对话时读出并注入 system prompt，Agent 才能知道这个偏好。')">B. 靠外部记忆，把偏好存入 DB，下次注入 system prompt</button>
+      <button class="quiz-opt" onclick="answer(this,false,'LLM 本身没有跨用户/跨会话的记忆能力。')">C. 靠 LLM 自己记住，不需要额外处理</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="prev()">← Loop Control</button>
+    <button class="btn-next" onclick="next()">Subagents →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ -->
+<!-- S4 — Subagents                 -->
+<!-- ═══════════════════════════════ -->
+<div class="section" id="s4">
+  <div class="sec-kicker">Chapter 05</div>
+  <div class="sec-headline">Subagents<br>Agent 调 Agent</div>
+  <p class="sec-lead">复杂任务用单个 Agent 难以胜任。Subagent 模式让一个 Orchestrator Agent 把子任务委托给专门的 Expert Agent，实现分工协作。</p>
+
+  <div class="col-box ruled">
+    <div class="col-box-title">三种多 Agent 架构</div>
+    <div class="steps">
+      <div class="step-item">
+        <div class="step-n">A</div>
+        <div class="step-content">
+          <div class="step-t">顺序委托（Sequential）</div>
+          <div class="step-d">Orchestrator → Agent A 完成 → Agent B 完成 → Agent C 完成 → 汇总</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-n">B</div>
+        <div class="step-content">
+          <div class="step-t">并行委托（Parallel）</div>
+          <div class="step-d">Orchestrator 同时启动多个 Agent，用 Promise.all 等待全部完成再合并结果</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-n">C</div>
+        <div class="step-content">
+          <div class="step-t">动态路由（Router）</div>
+          <div class="step-d">Orchestrator 根据问题类型，动态选择最合适的专家 Agent 处理</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">核心思路：把 Agent 包装成 Tool</div>
+    <div class="aside green" style="margin-bottom:12px;">
+      <strong>关键设计</strong>：AI SDK 的 Subagent 模式非常优雅 — 把一个 Agent 的 <code>generate()</code> 调用封装进 <code>tool()</code> 的 <code>execute</code> 里，让 Orchestrator 像调工具一样调用子 Agent。
+    </div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button"><span class="cmt">// 1. 定义专家 Agent</span>
+<span class="kw">const</span> researchAgent <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">'openai/gpt-4o'</span>,
+  system: <span class="str">'你是专业的市场调研专家，输出结构化数据'</span>,
+  tools: { webSearch, fetchPage },
+})
+
+<span class="kw">const</span> writerAgent <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">'openai/gpt-4o'</span>,
+  system: <span class="str">'你是商业文案撰写专家，输出专业报告'</span>,
+  tools: { formatDocument },
+})
+
+<span class="cmt">// 2. 把子 Agent 包装成工具</span>
+<span class="kw">const</span> researchTool <span class="op">=</span> <span class="fn">tool</span>({
+  description: <span class="str">'对某个主题进行深度市场调研'</span>,
+  inputSchema: z.<span class="fn">object</span>({
+    topic: z.<span class="fn">string</span>().<span class="fn">describe</span>(<span class="str">'调研主题'</span>),
+  }),
+  execute: <span class="kw">async</span> ({ topic }) <span class="op">=&gt;</span> {
+    <span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> researchAgent.<span class="fn">generate</span>({
+      prompt: <span class="str">`深度调研：</span>${topic}<span class="str">，提供数据和洞察`</span>,
+    })
+    <span class="kw">return</span> result.text  <span class="cmt">// 返回调研结果</span>
+  },
+})
+
+<span class="kw">const</span> writeTool <span class="op">=</span> <span class="fn">tool</span>({
+  description: <span class="str">'根据调研数据撰写专业报告'</span>,
+  inputSchema: z.<span class="fn">object</span>({
+    researchData: z.<span class="fn">string</span>(),
+    reportType: z.<span class="fn">enum</span>([<span class="str">'executive'</span>, <span class="str">'detailed'</span>]),
+  }),
+  execute: <span class="kw">async</span> ({ researchData, reportType }) <span class="op">=&gt;</span> {
+    <span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> writerAgent.<span class="fn">generate</span>({
+      prompt: <span class="str">`基于以下数据写</span>${reportType}<span class="str">报告：\n</span>${researchData}<span class="str">`</span>,
+    })
+    <span class="kw">return</span> result.text
+  },
+})
+
+<span class="cmt">// 3. Orchestrator Agent — 自动协调子 Agent</span>
+<span class="kw">const</span> orchestrator <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">'openai/gpt-4o'</span>,
+  system: <span class="str">'你是项目经理，协调专家完成复杂任务'</span>,
+  tools: { researchTool, writeTool },
+  stopWhen: <span class="fn">stepCountIs</span>(<span class="num">8</span>),
+})
+
+<span class="cmt">// 4. 使用：一个 prompt 触发完整的多 Agent 流程</span>
+<span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> orchestrator.<span class="fn">generate</span>({
+  prompt: <span class="str">'调研中国新能源汽车市场，并生成一份管理层摘要报告'</span>,
+})
+<span class="cmt">// Orchestrator 会自动：
+// 1. 调用 researchTool（触发 researchAgent）
+// 2. 用调研结果调用 writeTool（触发 writerAgent）
+// 3. 合并结果给出最终答案</span></pre>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">并行执行 Subagents（提升效率）</div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button"><span class="cmt">// 多个子 Agent 同时运行，用 Promise.all 等待</span>
+<span class="kw">async function</span> <span class="fn">parallelAnalysis</span>(company: <span class="typ">string</span>) {
+  <span class="kw">const</span> [finance, market, tech] <span class="op">=</span> <span class="kw">await</span> Promise.<span class="fn">all</span>([
+    financeAgent.<span class="fn">generate</span>({
+      prompt: <span class="str">`分析 </span>${company}<span class="str"> 的财务状况`</span>,
+    }),
+    marketAgent.<span class="fn">generate</span>({
+      prompt: <span class="str">`分析 </span>${company}<span class="str"> 的市场地位`</span>,
+    }),
+    techAgent.<span class="fn">generate</span>({
+      prompt: <span class="str">`评估 </span>${company}<span class="str"> 的技术实力`</span>,
+    }),
+  ])
+
+  <span class="cmt">// 用 Orchestrator 合并三个维度的分析</span>
+  <span class="kw">const</span> summary <span class="op">=</span> <span class="kw">await</span> orchestrator.<span class="fn">generate</span>({
+    prompt: <span class="str">`综合以下三个维度的分析，给出投资建议：
+财务：</span>${finance.text}<span class="str">
+市场：</span>${market.text}<span class="str">
+技术：</span>${tech.text}<span class="str">`</span>,
+  })
+
+  <span class="kw">return</span> summary.text
+}</pre>
+  </div>
+
+  <div class="col-box">
+    <div class="col-box-title">动态路由 Agent — 根据问题分流</div>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button"><span class="cmt">// 不同领域的专家 Agent</span>
+<span class="kw">const</span> agents = {
+  code:    <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({ system: <span class="str">'你是代码专家'</span>, ... }),
+  legal:   <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({ system: <span class="str">'你是法律顾问'</span>, ... }),
+  finance: <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({ system: <span class="str">'你是财务分析师'</span>, ... }),
+}
+
+<span class="kw">async function</span> <span class="fn">route</span>(userQuestion: <span class="typ">string</span>) {
+  <span class="cmt">// 先用轻量模型做分类</span>
+  <span class="kw">const</span> { object: { domain } } <span class="op">=</span> <span class="kw">await</span> <span class="fn">generateObject</span>({
+    model: <span class="fn">openai</span>(<span class="str">'gpt-4o-mini'</span>),
+    schema: z.<span class="fn">object</span>({
+      domain: z.<span class="fn">enum</span>([<span class="str">'code'</span>, <span class="str">'legal'</span>, <span class="str">'finance'</span>, <span class="str">'general'</span>]),
+    }),
+    prompt: <span class="str">`这个问题属于哪个领域：</span>${userQuestion}<span class="str">`</span>,
+  })
+
+  <span class="cmt">// 路由到对应专家</span>
+  <span class="kw">const</span> agent <span class="op">=</span> agents[domain] <span class="op">??</span> defaultAgent
+  <span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> agent.<span class="fn">generate</span>({ prompt: userQuestion })
+  <span class="kw">return</span> result.text
+}</pre>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-header">知识检验</div>
+    <div class="quiz-q">在 AI SDK 中实现 Subagent，最优雅的方式是？</div>
+    <div class="quiz-opts">
+      <button class="quiz-opt" onclick="answer(this,false,'直接互相调用会让代码高度耦合，而且 Orchestrator 无法"感知"子 Agent 的能力。')">A. 在一个 Agent 的代码里直接调用另一个 Agent 的 generate()</button>
+      <button class="quiz-opt" onclick="answer(this,true,'✅ 完美！把子 Agent 封装进 tool() 的 execute 函数，Orchestrator 就能像选择任何工具一样自主决定何时调用哪个子 Agent。')">B. 把子 Agent 的 generate() 封装进 tool() 的 execute，让 Orchestrator 当工具调用</button>
+      <button class="quiz-opt" onclick="answer(this,false,'用 HTTP 请求会增加不必要的网络开销和复杂度，同进程内直接调用更高效。')">C. 用 HTTP 请求让 Agent 互相调用各自的 API 端点</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-back" onclick="prev()">← Memory</button>
+    <button class="btn-next" onclick="next()">Multi-Agent →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ -->
+<!-- S5 — Multi-Agent               -->
+<!-- ═══════════════════════════════ -->
+<div class="section" id="s5">
+  <div class="wrap">
+  <div class="sec-kicker">Chapter 06</div>
+  <div class="sec-headline">Multi-Agent<br>网络协作</div>
+  <p class="sec-lead">多个 Agent 组成协作网络，每个 Agent 独立运行、相互通信，共同完成单个 Agent 无法胜任的复杂任务。这是 AI SDK 对 Subagent 概念的进一步延伸。</p>
+
+  <!-- Core distinction -->
+  <div class="col-box ruled">
+    <div class="col-box-title">⚡ Subagent vs Multi-Agent — 核心区别</div>
+    <div class="col-2 col-layout" style="gap:20px;margin-top:8px;">
+      <div>
+        <p style="font-family:var(--mono);font-size:11px;color:var(--red);margin-bottom:8px;letter-spacing:1px;">SUBAGENT 模式</p>
+        <div class="steps">
+          <div class="step-item">
+            <div class="step-n" style="background:var(--red);color:#fff;">↓</div>
+            <div class="step-content">
+              <div class="step-t">层级制（Hierarchical）</div>
+              <div class="step-d">有明确的 Orchestrator（主 Agent）主动调用 Subagent（从 Agent）。控制权在上层。</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-n" style="background:var(--red);color:#fff;">🔧</div>
+            <div class="step-content">
+              <div class="step-t">Subagent 被封装成 Tool</div>
+              <div class="step-d">Orchestrator 通过 Tool Call 触发子 Agent，子 Agent 的执行对主 Agent 是透明的。</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-n" style="background:var(--red);color:#fff;">📋</div>
+            <div class="step-content">
+              <div class="step-t">适合：有中心协调者的任务</div>
+              <div class="step-d">如"报告生成"：主 Agent 先调研再写作，流程固定、有主控方。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p style="font-family:var(--mono);font-size:11px;color:var(--blue);margin-bottom:8px;letter-spacing:1px;">MULTI-AGENT 模式</p>
+        <div class="steps">
+          <div class="step-item">
+            <div class="step-n" style="background:var(--blue);color:#fff;">⇄</div>
+            <div class="step-content">
+              <div class="step-t">网状制（Networked）</div>
+              <div class="step-d">多个平等的 Agent 各自独立运行，通过消息/共享状态互相通信，无单一控制中心。</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-n" style="background:var(--blue);color:#fff;">📡</div>
+            <div class="step-content">
+              <div class="step-t">Agent 通过消息传递协作</div>
+              <div class="step-d">每个 Agent 可以向其他 Agent 发消息、等待回复，形成真正的协作网络。</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-n" style="background:var(--blue);color:#fff;">🌐</div>
+            <div class="step-content">
+              <div class="step-t">适合：需要多方并行协作的任务</div>
+              <div class="step-d">如"代码审查流水线"：多个专家 Agent 并行工作，互相 review 结果。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visual comparison diagram -->
+  <div class="col-box">
+    <div class="col-box-title">架构图对比</div>
+    <div class="diagram">
+<div style="color:#5a6480;font-size:10px;letter-spacing:1px;margin-bottom:10px;">SUBAGENT — 树状层级</div>
+<div style="text-align:center;margin-bottom:4px;">
+  <span class="d-node d-red">Orchestrator Agent</span>
+</div>
+<div style="text-align:center;color:#5a6480;margin-bottom:4px;">┌──────────┴──────────┐</div>
+<div style="text-align:center;">
+  <span class="d-node d-gray">Research Agent</span>
+  <span style="margin:0 20px;"></span>
+  <span class="d-node d-gray">Writer Agent</span>
+  <span style="margin:0 20px;"></span>
+  <span class="d-node d-gray">Review Agent</span>
+</div>
+<div style="height:24px;"></div>
+<div style="color:#5a6480;font-size:10px;letter-spacing:1px;margin-bottom:10px;">MULTI-AGENT — 网状协作</div>
+<div style="text-align:center;line-height:2.5;">
+  <span class="d-node d-blue">Frontend Agent</span>
+  <span class="d-arr">⇄</span>
+  <span class="d-node d-blue">Backend Agent</span>
+  <br>
+  <span style="color:#5a6480;margin:0 20px;">⇅</span>
+  <span style="margin:0 50px;"></span>
+  <span style="color:#5a6480;margin:0 20px;">⇅</span>
+  <br>
+  <span class="d-node d-blue">DB Agent</span>
+  <span class="d-arr">⇄</span>
+  <span class="d-node d-blue">Security Agent</span>
+</div>
+    </div>
+  </div>
+
+  <!-- AI SDK support -->
+  <div class="col-box">
+    <div class="col-box-title">AI SDK 如何支持 Multi-Agent？</div>
+    <div class="aside green" style="margin-bottom:12px;">
+      <strong>关键理解</strong>：AI SDK 本身不内置"Multi-Agent 框架"，但它提供了构建多 Agent 协作所需的全部原语。你用 <code>ToolLoopAgent</code> + 异步通信模式来实现 Multi-Agent 网络。
+    </div>
+    <div class="tag-row">
+      <span class="tag tag-g">ToolLoopAgent × N</span>
+      <span class="tag tag-b">Promise.all 并行</span>
+      <span class="tag tag-b">消息队列</span>
+      <span class="tag tag-r">共享状态</span>
+      <span class="tag tag-o">事件驱动</span>
+    </div>
+  </div>
+
+  <!-- Pattern 1: Parallel network -->
+  <div class="col-box">
+    <div class="col-box-title">模式 1：并行网络（最常用）</div>
+    <p style="font-size:13px;color:#666;margin-bottom:8px;">多个专家 Agent 同时运行，结果汇总给 Synthesizer Agent 整合。</p>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button><span class="kw">import</span> { <span class="cls">ToolLoopAgent</span>, tool, stepCountIs } <span class="kw">from</span> <span class="str">'ai'</span>
+
+<span class="cmt">// ── 定义专家 Agent 网络 ──</span>
+<span class="kw">const</span> agents = {
+  frontend: <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+    model: <span class="str">'openai/gpt-4o'</span>,
+    system: <span class="str">'你是前端架构专家，专注 React/TypeScript/性能优化'</span>,
+    tools: { searchDocs, runLinter },
+  }),
+
+  backend: <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+    model: <span class="str">'openai/gpt-4o'</span>,
+    system: <span class="str">'你是后端架构专家，专注 API 设计/数据库/安全'</span>,
+    tools: { searchDocs, queryDB },
+  }),
+
+  security: <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+    model: <span class="str">'anthropic/claude-sonnet-4-5'</span>, <span class="cmt">// 可以混用不同模型！</span>
+    system: <span class="str">'你是安全专家，专注漏洞识别/OWASP/渗透测试'</span>,
+    tools: { scanVulnerabilities, checkDependencies },
+  }),
+
+  synthesizer: <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+    model: <span class="str">'openai/gpt-4o'</span>,
+    system: <span class="str">'你是技术总监，负责整合多个专家意见给出最终方案'</span>,
+  }),
+}
+
+<span class="cmt">// ── 并行执行三个专家，再汇总 ──</span>
+<span class="kw">async function</span> <span class="fn">codeReview</span>(prDescription: <span class="typ">string</span>) {
+  <span class="cmt">// Step 1: 三个 Agent 同时分析（节省 2/3 时间）</span>
+  <span class="kw">const</span> [frontendReview, backendReview, securityReview] <span class="op">=</span>
+    <span class="kw">await</span> Promise.<span class="fn">all</span>([
+      agents.frontend.<span class="fn">generate</span>({
+        prompt: <span class="str">`审查这个 PR 的前端部分：\n</span>${prDescription}<span class="str">`</span>,
+      }),
+      agents.backend.<span class="fn">generate</span>({
+        prompt: <span class="str">`审查这个 PR 的后端部分：\n</span>${prDescription}<span class="str">`</span>,
+      }),
+      agents.security.<span class="fn">generate</span>({
+        prompt: <span class="str">`检查这个 PR 的安全风险：\n</span>${prDescription}<span class="str">`</span>,
+      }),
+    ])
+
+  <span class="cmt">// Step 2: Synthesizer 整合所有意见</span>
+  <span class="kw">const</span> finalReview <span class="op">=</span> <span class="kw">await</span> agents.synthesizer.<span class="fn">generate</span>({
+    prompt: <span class="str">`整合以下三位专家的 Code Review 意见，给出优先级排序和最终建议：
+
+【前端专家】
+</span>${frontendReview.text}<span class="str">
+
+【后端专家】
+</span>${backendReview.text}<span class="str">
+
+【安全专家】
+</span>${securityReview.text}<span class="str">`</span>,
+  })
+
+  <span class="kw">return</span> {
+    final: finalReview.text,
+    details: { frontendReview, backendReview, securityReview },
+    totalSteps: frontendReview.steps.length
+      <span class="op">+</span> backendReview.steps.length
+      <span class="op">+</span> securityReview.steps.length,
+  }
+}</pre>
+  </div>
+
+  <!-- Pattern 2: Event-driven -->
+  <div class="col-box">
+    <div class="col-box-title">模式 2：事件驱动网络（Agent 之间通信）</div>
+    <p style="font-size:13px;color:#666;margin-bottom:8px;">Agent 产生输出后触发事件，其他订阅该事件的 Agent 自动响应。适合流水线场景。</p>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button"><span class="kw">import</span> { EventEmitter } <span class="kw">from</span> <span class="str">'events'</span>
+
+<span class="cmt">// 用 EventEmitter 作为 Agent 间的消息总线</span>
+<span class="kw">const</span> bus <span class="op">=</span> <span class="kw">new</span> EventEmitter()
+
+<span class="cmt">// Agent A：需求分析师——分析用户需求，产出技术规格</span>
+<span class="kw">const</span> analystAgent <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">'openai/gpt-4o-mini'</span>,
+  system: <span class="str">'你是需求分析师，将用户需求转化为技术规格文档'</span>,
+})
+
+<span class="cmt">// Agent B：开发者——收到规格后生成代码</span>
+<span class="kw">const</span> devAgent <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">'openai/gpt-4o'</span>,
+  system: <span class="str">'你是高级开发者，根据技术规格实现代码'</span>,
+  tools: { writeFile, runTests },
+})
+
+<span class="cmt">// Agent C：QA——收到代码后执行测试并报告</span>
+<span class="kw">const</span> qaAgent <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">'openai/gpt-4o-mini'</span>,
+  system: <span class="str">'你是 QA 工程师，审查代码并报告问题'</span>,
+  tools: { runTests, checkCoverage },
+})
+
+<span class="cmt">// ── 事件订阅（Agent 之间的通信协议）──</span>
+bus.<span class="fn">on</span>(<span class="str">'spec-ready'</span>, <span class="kw">async</span> (spec: <span class="typ">string</span>) <span class="op">=&gt;</span> {
+  console.<span class="fn">log</span>(<span class="str">'[Dev Agent] 收到规格，开始编码...'</span>)
+  <span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> devAgent.<span class="fn">generate</span>({
+    prompt: <span class="str">`根据以下规格实现代码：\n</span>${spec}<span class="str">`</span>,
+  })
+  bus.<span class="fn">emit</span>(<span class="str">'code-ready'</span>, result.text) <span class="cmt">// 触发下一个 Agent</span>
+})
+
+bus.<span class="fn">on</span>(<span class="str">'code-ready'</span>, <span class="kw">async</span> (code: <span class="typ">string</span>) <span class="op">=&gt;</span> {
+  console.<span class="fn">log</span>(<span class="str">'[QA Agent] 收到代码，开始测试...'</span>)
+  <span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> qaAgent.<span class="fn">generate</span>({
+    prompt: <span class="str">`审查以下代码并报告问题：\n</span>${code}<span class="str">`</span>,
+  })
+  bus.<span class="fn">emit</span>(<span class="str">'review-done'</span>, result.text)
+})
+
+<span class="cmt">// ── 启动流水线 ──</span>
+<span class="kw">async function</span> <span class="fn">runPipeline</span>(userRequirement: <span class="typ">string</span>) {
+  <span class="kw">const</span> spec <span class="op">=</span> <span class="kw">await</span> analystAgent.<span class="fn">generate</span>({ prompt: userRequirement })
+  bus.<span class="fn">emit</span>(<span class="str">'spec-ready'</span>, spec.text) <span class="cmt">// 启动整个链路</span>
+}
+
+<span class="kw">await</span> <span class="fn">runPipeline</span>(<span class="str">'实现一个用户登录 API，支持 JWT 认证'</span>)</pre>
+  </div>
+
+  <!-- Pattern 3: Shared state -->
+  <div class="col-box">
+    <div class="col-box-title">模式 3：共享状态（Agent 读写同一个上下文）</div>
+    <p style="font-size:13px;color:#666;margin-bottom:8px;">多个 Agent 共享一个"项目状态"对象，通过读写状态来协调行动。</p>
+    <pre><button class="copy-btn" onclick="cp(this)">copy</button"><span class="cmt">// 共享状态对象（实际项目中放在 Redis/DB）</span>
+<span class="kw">interface</span> <span class="cls">ProjectState</span> {
+  requirements: <span class="typ">string</span>[]
+  designDecisions: <span class="typ">string</span>[]
+  implementedFeatures: <span class="typ">string</span>[]
+  openIssues: <span class="typ">string</span>[]
+  status: <span class="str">'planning'</span> <span class="op">|</span> <span class="str">'building'</span> <span class="op">|</span> <span class="str">'reviewing'</span> <span class="op">|</span> <span class="str">'done'</span>
+}
+
+<span class="kw">const</span> projectState: <span class="cls">ProjectState</span> <span class="op">=</span> {
+  requirements: [],
+  designDecisions: [],
+  implementedFeatures: [],
+  openIssues: [],
+  status: <span class="str">'planning'</span>,
+}
+
+<span class="cmt">// 工具：Agent 通过工具读写共享状态</span>
+<span class="kw">const</span> stateTools <span class="op">=</span> {
+  <span class="fn">readState</span>: <span class="fn">tool</span>({
+    description: <span class="str">'读取当前项目状态'</span>,
+    inputSchema: z.<span class="fn">object</span>({}),
+    execute: <span class="kw">async</span> () <span class="op">=&gt;</span> projectState,
+  }),
+  <span class="fn">updateState</span>: <span class="fn">tool</span>({
+    description: <span class="str">'更新项目状态中的某个字段'</span>,
+    inputSchema: z.<span class="fn">object</span>({
+      field: z.<span class="fn">enum</span>([<span class="str">'requirements'</span>, <span class="str">'designDecisions'</span>,
+                        <span class="str">'implementedFeatures'</span>, <span class="str">'openIssues'</span>]),
+      items: z.<span class="fn">array</span>(z.<span class="fn">string</span>()),
+    }),
+    execute: <span class="kw">async</span> ({ field, items }) <span class="op">=&gt;</span> {
+      projectState[field].<span class="fn">push</span>(...items)
+      <span class="kw">return</span> { success: <span class="kw">true</span>, updated: field }
+    },
+  }),
+}
+
+<span class="cmt">// 每个 Agent 都挂载 stateTools，可以读写共享状态</span>
+<span class="kw">const</span> pmAgent <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">'openai/gpt-4o-mini'</span>,
+  system: <span class="str">'你是 PM，负责整理需求并写入项目状态'</span>,
+  tools: { ...stateTools },
+})
+
+<span class="kw">const</span> architectAgent <span class="op">=</span> <span class="kw">new</span> <span class="cls">ToolLoopAgent</span>({
+  model: <span class="str">'openai/gpt-4o'</span>,
+  system: <span class="str">'你是架构师，读取需求，制定技术设计方案并写入状态'</span>,
+  tools: { ...stateTools },
+})
+
+<span class="cmt">// 顺序协作：PM 先整理需求，架构师再读取设计</span>
+<span class="kw">await</span> pmAgent.<span class="fn">generate</span>({ prompt: <span class="str">'整理用户提出的需求'</span> })
+<span class="kw">await</span> architectAgent.<span class="fn">generate</span>({ prompt: <span class="str">'读取需求，输出技术方案'</span> })</pre>
+  </div>
+
+  <!-- When to use which -->
+  <div class="col-box ruled">
+    <div class="col-box-title">选择指南：什么时候用哪种模式？</div>
+    <div class="steps">
+      <div class="step-item">
+        <div class="step-n" style="background:var(--red);color:#fff;">S</div>
+        <div class="step-content">
+          <div class="step-t">用 Subagent — 有明确主控方的任务</div>
+          <div class="step-d">任务流程相对固定，需要一个"大脑"统一决策。如：报告生成、客服路由、内容审核流水线。</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-n" style="background:var(--blue);color:#fff;">M</div>
+        <div class="step-content">
+          <div class="step-t">用 Multi-Agent — 需要平等协作的任务</div>
+          <div class="step-d">多个专业领域需要同等权重的输入，没有单一的正确流程。如：代码评审、投资分析、研究综述。</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-n" style="background:var(--green);color:#fff;">↑</div>
+        <div class="step-content">
+          <div class="step-t">混合使用 — 最常见的生产方案</div>
+          <div class="step-d">外层用 Subagent 模式做任务分发，内层用 Multi-Agent 并行处理。两种模式可以自由组合嵌套。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-header">知识检验</div>
+    <div class="quiz-q">你在做一个"投资尽调系统"，需要财务、法律、市场三个领域同等重要地分析一家公司，最后综合出报告。应该选哪种架构？</div>
+    <div class="quiz-opts">
+      <button class="quiz-opt" onclick="answer(this,false,'Subagent 模式有单一主控方，三个领域会被依次调用而非平等协作，效率较低。')">A. Subagent 模式，让一个主 Agent 依次调用三个专家</button>
+      <button class="quiz-opt" onclick="answer(this,true,'✅ 正确！三个领域权重相等且可以并行，适合 Multi-Agent 并行网络。Promise.all 并发执行后，再用 Synthesizer Agent 整合。')">B. Multi-Agent 并行网络，三个专家 Agent 同时分析，再用 Synthesizer 整合</button>
+      <button class="quiz-opt" onclick="answer(this,false,'单个 Agent 混合专业会导致回答质量下降，专家 Agent 分工明确效果更好。')">C. 单个 Agent，在 system prompt 里说"你是财务+法律+市场专家"</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+
+  <!-- FINAL BLOCK -->
+  <div class="final-block">
+    <div style="font-family:var(--mono);font-size:11px;color:var(--red);letter-spacing:2px;margin-bottom:16px;">◆ AGENT 篇完结 ◆</div>
+    <div class="final-title">Agent 全栈<br>完全掌握</div>
+    <p style="color:#666;font-size:14px;max-width:500px;margin:12px auto 28px;line-height:1.75;">
+      从单 Agent 的 ReAct 循环，到 Subagent 层级协作，再到 Multi-Agent 网络，你已经掌握了 AI SDK Agent 体系的全部核心概念。
+    </p>
+
+    <div class="cheat-grid">
+      <div class="cheat-cell">
+        <div class="cheat-key">ToolLoopAgent</div>
+        <div class="cheat-val">定义可复用 Agent，generate() / stream()</div>
+      </div>
+      <div class="cheat-cell">
+        <div class="cheat-key">stopWhen + prepareStep</div>
+        <div class="cheat-val">精确控制循环终止与每步行为</div>
+      </div>
+      <div class="cheat-cell">
+        <div class="cheat-key">External Memory</div>
+        <div class="cheat-val">DB 存历史 + 向量检索语义记忆</div>
+      </div>
+      <div class="cheat-cell">
+        <div class="cheat-key">Subagent</div>
+        <div class="cheat-val">Agent 封装成 Tool，树状层级协作</div>
+      </div>
+      <div class="cheat-cell">
+        <div class="cheat-key">Multi-Agent 并行</div>
+        <div class="cheat-val">Promise.all 并发 + Synthesizer 汇总</div>
+      </div>
+      <div class="cheat-cell">
+        <div class="cheat-key">Multi-Agent 事件驱动</div>
+        <div class="cheat-val">EventEmitter 消息总线，流水线协作</div>
+      </div>
+    </div>
+
+    <button class="btn-back" onclick="restart()" style="margin-top:16px;">↩ 重新学习</button>
+  </div>
+
+  <div style="height:40px;"></div>
+  </div><!-- /inner wrap -->
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+let cur = 0;
+const N = 6;
+const done = new Set();
+
+function updateUI() {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', i === cur);
+    t.classList.toggle('done', done.has(i) && i !== cur);
+  });
+  const pct = (done.size / N) * 100;
+  document.getElementById('pf').style.width = pct + '%';
+}
+
+function goto(idx) {
+  document.getElementById('s' + cur).classList.remove('active');
+  cur = idx;
+  document.getElementById('s' + cur).classList.add('active');
+  updateUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function next() { done.add(cur); if (cur < N - 1) goto(cur + 1); else updateUI(); }
+function prev() { if (cur > 0) goto(cur - 1); }
+function restart() { done.clear(); goto(0); }
+
+function answer(btn, ok, msg) {
+  const quiz = btn.closest('.quiz-box');
+  quiz.querySelectorAll('.quiz-opt').forEach(o => o.disabled = true);
+  btn.classList.add(ok ? 'correct' : 'wrong');
+  const fb = quiz.querySelector('.quiz-fb');
+  fb.textContent = msg;
+  fb.className = 'quiz-fb show ' + (ok ? 'ok' : 'ng');
+}
+
+function cp(btn) {
+  const pre = btn.parentElement;
+  const text = pre.innerText.replace(/^copy\n?/, '');
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'ok!';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('ok'); }, 2000);
+  });
+}
+
+updateUI();
+</script>
+</body>
+</html>
